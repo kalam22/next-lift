@@ -1,0 +1,39 @@
+-- This migration was removed because it was for MySQL
+-- The database has been migrated to PostgreSQL
+-- This file exists only to satisfy Prisma migration history
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model laptops {
+  id              Int               @id @default(autoincrement())
+  merk            String            @db.VarChar(191)
+  prosesor        String            @db.VarChar(191)
+  sn              String?           @db.VarChar(191)
+  ssd_hdd         String            @db.VarChar(191)
+  ram             String            @db.VarChar(191)
+  monitor         String?           @db.VarChar(191)
+  printer         String?           @db.VarChar(191)
+  keyboard        String?           @db.VarChar(191)
+  masuk           DateTime
+  kirim           DateTime?
+  unit            String?           @db.VarChar(191)
+  untuk           String            @db.VarChar(191)
+  site            String            @db.VarChar(191)
+  departemen      String?           @db.VarChar(191)
+  po              Int
+  status          String            @db.VarChar(191)
+  kerusakan       String?
+  surat_jalan     String?           @db.VarChar(191)
+  catatan         String?
+  gambar          String?
+  serah_terima_pdf String?          @map("serah_terima_pdf") @db.VarChar(191)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  histories       LaptopHistory[]
+
+  @@index([site], map: "idx_laptops_site")
+  @@index([status], map: "idx_laptops_status")
+  @@index([masuk], map: "idx_laptops_masuk")
+  @@index([kirim], map: "idx_laptops_kirim")
+  @@index([created_at], map: "idx_laptops_created_at")
+  @@index([merk], map: "idx_laptops_merk")
+  @@index([site, status], map: "idx_laptops_site_status")
+  @@index([site, masuk], map: "idx_laptops_site_masuk")
+  @@index([masuk, kirim], map: "idx_laptops_masuk_kirim")
+}
+
+model LaptopHistory {
+  id             Int      @id @default(autoincrement())
+  laptop_id      Int
+  pic            String   @db.VarChar(191)
+  tanggal_terima DateTime
+  site           String   @db.VarChar(191)
+  departemen     String?  @db.VarChar(191)
+  keterangan     String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  laptop         laptops  @relation(fields: [laptop_id], references: [id], onDelete: Cascade)
+
+  @@index([laptop_id], map: "idx_laptop_histories_laptop_id")
+  @@index([tanggal_terima], map: "idx_laptop_histories_tanggal_terima")
+  @@index([laptop_id, tanggal_terima], map: "idx_laptop_histories_laptop_id_tanggal")
+  @@map("laptop_histories")
+}
+
+model lifts {
+  id         Int       @id @default(autoincrement())
+  nama       String    @db.VarChar(191)
+  pt         String    @db.VarChar(191)
+  departemen String?   @db.VarChar(191)
+  berlaku    DateTime?
+  akses      String?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+
+  @@index([departemen], map: "idx_lifts_departemen")
+  @@index([pt], map: "idx_lifts_pt")
+  @@index([created_at], map: "idx_lifts_created_at")
+  @@index([berlaku], map: "idx_lifts_berlaku")
+  @@index([nama], map: "idx_lifts_nama")
+  @@index([berlaku, pt], map: "idx_lifts_berlaku_pt")
+}
+
+model Mouse {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_mouse_site")
+  @@index([statusBarang], map: "idx_mouse_status_barang")
+  @@index([tanggalMasuk], map: "idx_mouse_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_mouse_tanggal_kirim")
+  @@index([createdAt], map: "idx_mouse_created_at")
+  @@index([brand], map: "idx_mouse_brand")
+  @@index([site, statusBarang], map: "idx_mouse_site_status")
+  @@index([site, tanggalMasuk], map: "idx_mouse_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_mouse_masuk_kirim")
+  @@map("mouse")
+}
+
+model Monitor {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_monitor_site")
+  @@index([statusBarang], map: "idx_monitor_status_barang")
+  @@index([tanggalMasuk], map: "idx_monitor_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_monitor_tanggal_kirim")
+  @@index([createdAt], map: "idx_monitor_created_at")
+  @@index([brand], map: "idx_monitor_brand")
+  @@index([site, statusBarang], map: "idx_monitor_site_status")
+  @@index([site, tanggalMasuk], map: "idx_monitor_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_monitor_masuk_kirim")
+  @@map("monitor")
+}
+
+model pcs {
+  id          Int       @id @default(autoincrement())
+  merk        String    @db.VarChar(191)
+  prosesor    String    @db.VarChar(191)
+  ssd_hdd     String    @db.VarChar(191)
+  ram         String    @db.VarChar(191)
+  monitor     String?   @db.VarChar(191)
+  printer     String?   @db.VarChar(191)
+  keyboard    String?   @db.VarChar(191)
+  ups         String?   @db.VarChar(191)
+  masuk       DateTime
+  kirim       DateTime?
+  unit        String?   @db.VarChar(191)
+  untuk       String    @db.VarChar(191)
+  site        String    @db.VarChar(191)
+  departemen  String?   @db.VarChar(191)
+  po          Int
+  status      String    @db.VarChar(191)
+  kerusakan   String?
+  surat_jalan String?   @db.VarChar(191)
+  catatan     String?
+  gambar      String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@index([site], map: "idx_pcs_site")
+  @@index([status], map: "idx_pcs_status")
+  @@index([masuk], map: "idx_pcs_masuk")
+  @@index([kirim], map: "idx_pcs_kirim")
+  @@index([created_at], map: "idx_pcs_created_at")
+  @@index([merk], map: "idx_pcs_merk")
+  @@index([site, status], map: "idx_pcs_site_status")
+  @@index([site, masuk], map: "idx_pcs_site_masuk")
+  @@index([masuk, kirim], map: "idx_pcs_masuk_kirim")
+  @@map("pcs")
+  histories     PcHistory[]
+}
+
+model PcHistory {
+  id             Int      @id @default(autoincrement())
+  pc_id          Int
+  pic            String   @db.VarChar(191)
+  tanggal_terima DateTime
+  site           String   @db.VarChar(191)
+  departemen     String?  @db.VarChar(191)
+  keterangan     String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  pc             pcs      @relation(fields: [pc_id], references: [id], onDelete: Cascade)
+
+  @@index([pc_id], map: "idx_pc_histories_pc_id")
+  @@index([tanggal_terima], map: "idx_pc_histories_tanggal_terima")
+  @@index([pc_id, tanggal_terima], map: "idx_pc_histories_pc_id_tanggal")
+  @@map("pc_histories")
+}
+
+model Ups {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  dayaVa          String?   @map("daya_va") @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_ups_site")
+  @@index([statusBarang], map: "idx_ups_status_barang")
+  @@index([tanggalMasuk], map: "idx_ups_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_ups_tanggal_kirim")
+  @@index([createdAt], map: "idx_ups_created_at")
+  @@index([brand], map: "idx_ups_brand")
+  @@index([site, statusBarang], map: "idx_ups_site_status")
+  @@index([site, tanggalMasuk], map: "idx_ups_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_ups_masuk_kirim")
+  @@map("ups")
+}
+
+model Printer {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  jumlah          Int       @map("jumlah")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  kerusakan       String?
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_printer_site")
+  @@index([statusBarang], map: "idx_printer_status_barang")
+  @@index([tanggalMasuk], map: "idx_printer_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_printer_tanggal_kirim")
+  @@index([createdAt], map: "idx_printer_created_at")
+  @@index([brand], map: "idx_printer_brand")
+  @@index([site, statusBarang], map: "idx_printer_site_status")
+  @@index([site, tanggalMasuk], map: "idx_printer_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_printer_masuk_kirim")
+  @@map("printer")
+}
+
+model ToolsJaringan {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_tools_jaringan_site")
+  @@index([statusBarang], map: "idx_tools_jaringan_status_barang")
+  @@index([tanggalMasuk], map: "idx_tools_jaringan_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_tools_jaringan_tanggal_kirim")
+  @@index([createdAt], map: "idx_tools_jaringan_created_at")
+  @@index([brand], map: "idx_tools_jaringan_brand")
+  @@index([site, statusBarang], map: "idx_tools_jaringan_site_status")
+  @@index([site, tanggalMasuk], map: "idx_tools_jaringan_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_tools_jaringan_masuk_kirim")
+  @@map("tools_jaringan")
+}
+
+model Cctv {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  storage         String?   @map("storage") @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_cctv_site")
+  @@index([statusBarang], map: "idx_cctv_status_barang")
+  @@index([tanggalMasuk], map: "idx_cctv_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_cctv_tanggal_kirim")
+  @@index([createdAt], map: "idx_cctv_created_at")
+  @@index([brand], map: "idx_cctv_brand")
+  @@index([site, statusBarang], map: "idx_cctv_site_status")
+  @@index([site, tanggalMasuk], map: "idx_cctv_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_cctv_masuk_kirim")
+  @@map("cctv")
+}
+
+model Storage {
+  id              Int       @id @default(autoincrement())
+  brand           String    @db.VarChar(191)
+  storage         String    @map("storage") @db.VarChar(191)
+  jumlahOrderan   Int       @map("jumlah_orderan")
+  diperuntukan    String    @db.VarChar(191)
+  site            String    @db.VarChar(191)
+  departemen      String?   @db.VarChar(191)
+  nomorPO         String    @map("nomor_po") @db.VarChar(191)
+  nomorSuratJalan String?   @map("nomor_surat_jalan") @db.VarChar(191)
+  statusBarang    String    @map("status_barang") @db.VarChar(191)
+  tanggalMasuk    DateTime  @map("tanggal_masuk")
+  tanggalKirim    DateTime? @map("tanggal_kirim")
+  keterangan      String?
+  foto            String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([site], map: "idx_storage_site")
+  @@index([statusBarang], map: "idx_storage_status_barang")
+  @@index([tanggalMasuk], map: "idx_storage_tanggal_masuk")
+  @@index([tanggalKirim], map: "idx_storage_tanggal_kirim")
+  @@index([createdAt], map: "idx_storage_created_at")
+  @@index([brand], map: "idx_storage_brand")
+  @@index([site, statusBarang], map: "idx_storage_site_status")
+  @@index([site, tanggalMasuk], map: "idx_storage_site_masuk")
+  @@index([tanggalMasuk, tanggalKirim], map: "idx_storage_masuk_kirim")
+  @@map("storage")
+}
+
+model StockTransaction {
+  id            Int      @id @default(autoincrement())
+  partType      String   @map("part_type") @db.VarChar(10)
+  tanggal       DateTime
+  namaBarang    String   @map("nama_barang") @db.VarChar(191)
+  typeBarang    String   @map("type_barang") @db.VarChar(100)
+  quality       Int
+  vendorTujuan  String?  @map("vendor_tujuan") @db.VarChar(191)
+  keterangan    String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([partType], map: "idx_stock_transactions_part_type")
+  @@index([tanggal], map: "idx_stock_transactions_tanggal")
+  @@index([typeBarang], map: "idx_stock_transactions_type_barang")
+  @@map("stock_transactions")
+}
+
+model StockItemType {
+  id        Int      @id @default(autoincrement())
+  nama      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([nama], map: "idx_stock_item_types_nama")
+  @@map("stock_item_types")
+}
+
+model StockVendor {
+  id        Int      @id @default(autoincrement())
+  nama      String   @db.VarChar(191)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([nama], map: "idx_stock_vendors_nama")
+  @@map("stock_vendors")
+}

@@ -1,0 +1,104 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.pnp.*
+package-lock.json
+
+# testing
+/coverage
+*.lcov
+
+# next.js
+/.next/
+/out/
+.next
+out
+
+# production
+/build
+dist
+
+# misc
+.DS_Store
+*.pem
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# local env files
+.env*.local
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma
+# Uncomment if you want to ignore generated Prisma client
+# /node_modules/.prisma/
+
+# database
+*.db
+*.sqlite
+*.sqlite3
+
+# uploads / media files (uncomment jika tidak ingin commit file upload)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Cache
+.cache
+*.cache
+.parcel-cache
+.eslintcache
+.stylelintcache
+node_modules/.cache
+
+# Temporary files
+*.tmp
+*.temp
+.temp
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
