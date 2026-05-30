@@ -6,6 +6,8 @@ import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { validateRequest } from '@/lib/validation-helpers'
 import { laptopSchema } from '@/lib/validations/laptops'
 import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Laptop, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -239,6 +241,9 @@ export async function POST(request: NextRequest) {
 
     await cache.delete('/api/laptops')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'laptop', entityId: laptop.id, action: 'CREATE', description: `Data Laptop "${merk}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return NextResponse.json(transformed, { status: 201 })
   } catch (error) {

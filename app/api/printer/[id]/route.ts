@@ -6,6 +6,9 @@ import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Printer } from '@/types/entities'
 
 export async function GET(
@@ -207,6 +210,24 @@ export async function PUT(
     await cache.delete('/api/printer')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingPrinter.brand, newValue: brand },
+      { label: 'Site', oldValue: existingPrinter.site, newValue: site },
+      { label: 'Departemen', oldValue: existingPrinter.departemen, newValue: departemen },
+      { label: 'Status', oldValue: existingPrinter.statusBarang, newValue: statusBarang },
+      { label: 'Jumlah', oldValue: existingPrinter.jumlah, newValue: jumlah },
+      { label: 'Diperuntukan', oldValue: existingPrinter.diperuntukan, newValue: diperuntukan },
+      { label: 'Nomor PO', oldValue: existingPrinter.nomorPO, newValue: nomorPO },
+      { label: 'Surat Jalan', oldValue: existingPrinter.nomorSuratJalan, newValue: nomorSuratJalan },
+      { label: 'Kerusakan', oldValue: existingPrinter.kerusakan, newValue: kerusakan },
+      { label: 'Keterangan', oldValue: existingPrinter.keterangan, newValue: keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingPrinter.tanggalMasuk), newValue: formatDateForDiff(tanggalMasukDate) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingPrinter.tanggalKirim), newValue: formatDateForDiff(tanggalKirimDate) },
+      { label: 'Foto', oldValue: existingPrinter.foto ? 'Ada' : '-', newValue: foto ? (foto !== existingPrinter.foto ? 'Diperbarui' : 'Ada') : (existingPrinter.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'printer', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data Printer "${brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return NextResponse.json(printer)
   } catch (error: unknown) {
     logger.error('Error updating printer:', error)
@@ -256,6 +277,9 @@ export async function DELETE(
     await cache.delete(`/api/printer/${id}`)
     await cache.delete('/api/printer')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'printer', entityId: parseInt(id), action: 'DELETE', description: 'Data Printer dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'Printer deleted successfully' })
   } catch (error: unknown) {

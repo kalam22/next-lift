@@ -6,6 +6,9 @@ import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Mouse } from '@/types/entities'
 
 export async function GET(
@@ -207,6 +210,23 @@ export async function PUT(
     await cache.delete('/api/mouse')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingMouse.brand, newValue: brand },
+      { label: 'Site', oldValue: existingMouse.site, newValue: site },
+      { label: 'Departemen', oldValue: existingMouse.departemen, newValue: departemen },
+      { label: 'Status', oldValue: existingMouse.statusBarang, newValue: statusBarang },
+      { label: 'Diperuntukan', oldValue: existingMouse.diperuntukan, newValue: diperuntukan },
+      { label: 'Jumlah', oldValue: existingMouse.jumlahOrderan, newValue: jumlahOrderan },
+      { label: 'Nomor PO', oldValue: existingMouse.nomorPO, newValue: nomorPO },
+      { label: 'Surat Jalan', oldValue: existingMouse.nomorSuratJalan, newValue: nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingMouse.keterangan, newValue: keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingMouse.tanggalMasuk), newValue: formatDateForDiff(tanggalMasukDate) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingMouse.tanggalKirim), newValue: formatDateForDiff(tanggalKirimDate) },
+      { label: 'Foto', oldValue: existingMouse.foto ? 'Ada' : '-', newValue: foto ? (foto !== existingMouse.foto ? 'Diperbarui' : 'Ada') : (existingMouse.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'mouse', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data Mouse "${brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return NextResponse.json(mouse)
   } catch (error: unknown) {
     logger.error('Error updating mouse:', error)
@@ -263,6 +283,9 @@ export async function DELETE(
     await cache.delete(`/api/mouse/${id}`)
     await cache.delete('/api/mouse')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'mouse', entityId: parseInt(id), action: 'DELETE', description: 'Data Mouse dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'Mouse deleted successfully' })
   } catch (error: unknown) {

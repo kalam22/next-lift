@@ -9,6 +9,7 @@ import Swal from 'sweetalert2'
 import { logger } from '@/lib/logger'
 import type { Lift, LiftsApiResponse } from '@/types/lift'
 import LiftTableRow from '@/components/LiftTableRow'
+import { usePermissions } from '@/hooks/usePermissions'
 // ExcelJS akan di-import secara dynamic untuk mengurangi bundle size
 
 /**
@@ -23,6 +24,7 @@ import LiftTableRow from '@/components/LiftTableRow'
  * pertimbangkan untuk menggunakan useDataTable hook untuk konsistensi.
  */
 export default function LiftsPage() {
+  const { canCreate, canEdit, canDelete, canExport } = usePermissions('lifts')
   const [lifts, setLifts] = useState<Lift[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -130,12 +132,16 @@ export default function LiftsPage() {
     if (result.isConfirmed) {
       try {
         await axios.delete(`/api/lifts/${liftId}`)
+
+        // Hapus dari state lokal langsung — sama seperti useDataTable
+        setLifts(prev => prev.filter(l => l.id !== liftId))
+        setTotalItems(prev => Math.max(prev - 1, 0))
         setSelectedItems(prev => {
           const newSet = new Set(prev)
           newSet.delete(liftId)
           return newSet
         })
-        fetchLifts()
+
         Swal.fire({
           title: 'Terhapus!',
           text: 'Data berhasil dihapus.',
@@ -143,10 +149,7 @@ export default function LiftsPage() {
           timer: 1500,
           showConfirmButton: false,
           buttonsStyling: false,
-          customClass: {
-            popup: '!rounded-2xl',
-            title: '!font-bold',
-          },
+          customClass: { popup: '!rounded-2xl', title: '!font-bold' },
         })
       } catch (error) {
         logger.error('Error deleting lift:', error)
@@ -156,11 +159,7 @@ export default function LiftsPage() {
           icon: 'error',
           confirmButtonText: 'OK',
           buttonsStyling: false,
-          customClass: {
-            popup: '!rounded-2xl',
-            title: '!font-bold',
-            confirmButton: 'swal2-confirm',
-          },
+          customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' },
         })
       }
     }
@@ -367,11 +366,12 @@ export default function LiftsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl sm:text-4xl font-black text-[#020617] dark:text-white tracking-tighter uppercase">
-            User <span className="text-primary">Lift</span>
+            Management <span className="text-primary">Lift</span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-[0.2em] opacity-60">Control Panel / Access Systems</p>
         </div>
         <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+          {canExport && (
           <button
             onClick={exportToExcel}
             className="flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-white dark:bg-[#0f172a] border border-[#f1f5f9] dark:border-[#1e293b] rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/5"
@@ -379,6 +379,8 @@ export default function LiftsPage() {
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Export
           </button>
+          )}
+          {canCreate && (
           <Link
             href="/lifts/create"
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 text-[10px] sm:text-[11px]"
@@ -386,6 +388,7 @@ export default function LiftsPage() {
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Tambah User</span>
           </Link>
+          )}
         </div>
       </div>
 
@@ -500,6 +503,7 @@ export default function LiftsPage() {
                 </button>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
+                {canDelete && (
                 <button
                   onClick={handleBulkDelete}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 hover:scale-105 active:scale-95"
@@ -507,6 +511,7 @@ export default function LiftsPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   Hapus ({selectedItems.size})
                 </button>
+                )}
               </div>
             </div>
           </div>
@@ -615,6 +620,8 @@ export default function LiftsPage() {
                     selectedItems={selectedItems}
                     onSelectItem={handleSelectItem}
                     onDelete={handleDelete}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
                   />
                 ))
               )}

@@ -18,6 +18,8 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
+  // Only use assetPrefix in production to avoid loading assets from production URL in development
+  assetPrefix: process.env.NODE_ENV === 'production' ? (process.env.NEXT_PUBLIC_APP_URL || '') : '',
   async headers() {
     return [
       {

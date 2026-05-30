@@ -9,19 +9,30 @@ import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import Swal from 'sweetalert2'
 import { logger } from '@/lib/logger'
-import MetadataCard from '@/components/MetadataCard'
+import ActivityLogPanel from '@/components/ActivityLogPanel'
 import type { Printer } from '@/types/entities'
+import { usePermissions } from '@/hooks/usePermissions'
 
-interface NavInfo {
-  prevId: number | null
-  nextId: number | null
-  currentIndex: number
-  total: number
-}
+interface NavInfo { prevId: number | null; nextId: number | null; currentIndex: number; total: number }
+
+const SpecItem = ({ label, value }: { label: string; value: string | null | undefined }) => (
+    <div className="flex flex-col gap-1.5 p-4 rounded-2xl bg-gray-50 dark:bg-[#0f172a]/40 border border-[#f1f5f9] dark:border-[#334155]">
+        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
+        <span className="text-sm font-bold text-[#0f172a] dark:text-white truncate">{value || '-'}</span>
+    </div>
+)
+
+const InfoRow = ({ label, value, highlight }: { label: string; value: string | null | undefined; highlight?: boolean }) => (
+    <div className="flex items-center justify-between py-2.5 border-b border-[#f1f5f9] dark:border-[#334155] last:border-0">
+        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</span>
+        <span className={`text-xs font-bold ${highlight ? 'text-blue-600 dark:text-blue-400 uppercase tracking-widest' : 'text-gray-700 dark:text-gray-300'}`}>{value || '-'}</span>
+    </div>
+)
 
 export default function ViewPrinter() {
     const router = useRouter()
     const params = useParams()
+    const { canEdit } = usePermissions('printer')
     const [printer, setPrinter] = useState<Printer | null>(null)
     const [loading, setLoading] = useState(true)
     const [nav, setNav] = useState<NavInfo>({ prevId: null, nextId: null, currentIndex: 0, total: 0 })
@@ -32,244 +43,133 @@ export default function ViewPrinter() {
                 axios.get<Printer>(`/api/printer/${params.id}`),
                 axios.get<NavInfo>(`/api/printer/navigation?id=${params.id}`),
             ])
-            setPrinter(printerRes.data)
-            setNav(navRes.data)
+            setPrinter(printerRes.data); setNav(navRes.data)
         } catch (error: unknown) {
             logger.error('Error fetching printer:', error)
-            await Swal.fire({
-                title: 'Gagal!',
-                text: 'Gagal memuat data printer',
-                icon: 'error',
-                confirmButtonText: 'OK',
-                buttonsStyling: false,
-                customClass: {
-                    popup: '!rounded-2xl',
-                    title: '!font-bold',
-                    confirmButton: 'swal2-confirm',
-                },
-            })
-        } finally {
-            setLoading(false)
-        }
+            await Swal.fire({ title: 'Gagal!', text: 'Gagal memuat data printer', icon: 'error', confirmButtonText: 'OK', buttonsStyling: false, customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' } })
+        } finally { setLoading(false) }
     }, [params.id, router])
 
     useEffect(() => {
         fetchPrinter()
-        // Refresh data every 5 seconds to get updated timestamp in realtime
-        const interval = setInterval(() => {
-            fetchPrinter()
-        }, 5000)
+        const interval = setInterval(() => fetchPrinter(), 5000)
         return () => clearInterval(interval)
     }, [fetchPrinter])
 
-    if (loading) {
-        return (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Menyiapkan informasi perangkat...</p>
-            </div>
-        )
-    }
-
-    if (!printer) return null
-
-    // Function to format date only (without time) - read raw from database, add 8 hours
-    const formatDateWITA = (dateInput: string | Date) => {
-        if (!dateInput) return '-'
-        
-        // Convert to Date if it's a string
-        const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
-        
-        // Check if date is valid
-        if (isNaN(date.getTime())) {
-            return '-'
-        }
-        
-        // Database stores in UTC (we subtracted 8 hours during save)
-        // Add 8 hours back to get UTC+8 time
-        const witaDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
-        
-        // Format the UTC+8 date
-        return format(witaDate, 'dd MMM yyyy', { locale: id })
-    }
-
-    const SpecItem = ({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) => (
-        <div className="p-4 rounded-2xl bg-gray-50/50 dark:bg-[#0f172a]/40 border border-[#f1f5f9] dark:border-[#334155] flex flex-col gap-1 group hover:border-primary/30 transition-all">
-            <div className="flex items-center gap-2 text-gray-400 group-hover:text-primary transition-colors">
-                {icon && <div className="text-gray-400 group-hover:text-primary transition-colors">{icon}</div>}
-                <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-            </div>
-            <span className="text-sm font-bold text-[#0f172a] dark:text-white uppercase truncate">{value || '-'}</span>
+    if (loading) return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+            <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Menyiapkan informasi perangkat...</p>
         </div>
     )
+    if (!printer) return null
+
+    const formatDateWITA = (d: string | Date) => {
+        if (!d) return '-'
+        const date = d instanceof Date ? d : new Date(d)
+        if (isNaN(date.getTime())) return '-'
+        return format(new Date(date.getTime() + 8 * 3600000), 'dd MMM yyyy', { locale: id })
+    }
+
+    const statusColor = () => {
+        const s = printer.statusBarang?.toUpperCase()
+        if (s === 'BARU') return 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-100 dark:border-green-900/40'
+        if (s === 'SECOND') return 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-100 dark:border-yellow-900/40'
+        if (s === 'SERVICE' || printer.statusBarang?.toLowerCase().includes('rusak')) return 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-100 dark:border-red-900/40'
+        return 'bg-gray-50 dark:bg-gray-500/10 text-gray-600 border-gray-100 dark:border-gray-900/40'
+    }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="flex items-center justify-center sm:justify-start gap-5">
-                    <Link href="/printer" className="p-2.5 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-[#1e293b] rounded-2xl border border-transparent hover:border-[#f1f5f9] dark:hover:border-[#334155] transition-all shadow-sm">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Link href="/printer" className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-white dark:hover:bg-[#1e293b] rounded-2xl border border-transparent hover:border-[#f1f5f9] dark:hover:border-[#334155] transition-all shadow-sm">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tighter uppercase">{printer.brand}</h1>
-                        <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs font-bold text-primary uppercase tracking-widest">{printer.diperuntukan}</span>
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                            <span className="text-xs font-medium text-gray-400">Jumlah: {printer.jumlah} Unit</span>
-                            {nav.total > 0 && (
-                                <span className="text-xs font-medium text-gray-400">{nav.currentIndex} / {nav.total}</span>
-                            )}
+                        <h1 className="text-2xl font-black text-[#0f172a] dark:text-white tracking-tight uppercase">{printer.brand}</h1>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">{printer.diperuntukan}</span>
+                            {nav.total > 0 && <><span className="w-1 h-1 rounded-full bg-gray-300" /><span className="text-xs text-gray-400">{nav.currentIndex}/{nav.total}</span></>}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => nav.prevId && router.push(`/printer/${nav.prevId}/view`)}
-                            disabled={!nav.prevId}
-                            title="Data sebelumnya"
-                            className="p-2.5 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-2xl text-gray-400 hover:text-blue-600 hover:border-blue-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-                        </button>
-                        <button
-                            onClick={() => nav.nextId && router.push(`/printer/${nav.nextId}/view`)}
-                            disabled={!nav.nextId}
-                            title="Data selanjutnya"
-                            className="p-2.5 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-2xl text-gray-400 hover:text-blue-600 hover:border-blue-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                    </div>
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                        printer.statusBarang?.toUpperCase() === 'BARU'
-                            ? 'bg-green-50 dark:bg-green-500/10 text-green-600 border-green-100 dark:border-green-900/40'
-                            : printer.statusBarang?.toUpperCase() === 'SECOND'
-                            ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 border-yellow-100 dark:border-yellow-900/40'
-                            : printer.statusBarang?.toUpperCase() === 'SERVICE'
-                            ? 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-100 dark:border-red-900/40'
-                            : 'bg-gray-50 dark:bg-gray-500/10 text-gray-600 border-gray-100 dark:border-gray-900/40'
-                    }`}>
-                        {printer.statusBarang || '-'}
-                    </span>
-                    <Link href={`/printer/${printer.id}/edit`} className="px-6 py-2.5 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-all shadow-sm">
-                        Edit Perangkat
-                    </Link>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => nav.prevId && router.push(`/printer/${nav.prevId}/view`)} disabled={!nav.prevId} className="p-2 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-xl text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <button onClick={() => nav.nextId && router.push(`/printer/${nav.nextId}/view`)} disabled={!nav.nextId} className="p-2 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-xl text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                    <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${statusColor()}`}>{printer.statusBarang}</span>
+                    {canEdit && <Link href={`/printer/${printer.id}/edit`} className="px-4 py-2 bg-white dark:bg-[#1e293b] border border-[#f1f5f9] dark:border-[#334155] rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 transition-all shadow-sm">Edit</Link>}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-4 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="space-y-6">
                     <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm overflow-hidden p-3">
-                        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#0f172a] group">
-                            {printer.foto ? (
-                                <Image 
-                                    src={printer.foto} 
-                                    alt={printer.brand} 
-                                    fill 
-                                    className="object-cover"
-                                    priority
-                                    placeholder="blur"
-                                    blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmNWY5Ii8+PC9zdmc+"
-                                    unoptimized={printer.foto?.startsWith('/')}
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        target.style.display = 'none'
-                                    }}
-                                />
-                            ) : (
+                        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#0f172a]">
+                            {printer.foto ? <Image src={printer.foto} alt={printer.brand} fill className="object-cover" priority unoptimized={printer.foto?.startsWith('/')} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : (
                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                                    <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] mt-4">No Image Available</span>
+                                    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    <span className="text-[10px] font-black uppercase tracking-widest mt-3">No Image</span>
                                 </div>
                             )}
                         </div>
                     </div>
-
-                    <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-8 space-y-6">
-                        <div className="flex items-center gap-3 border-b border-[#f1f5f9] dark:border-[#334155] pb-4">
-                            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Lokasi & Pengadaan</h3>
                         </div>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Site Lokasi</span><span className="text-xs font-black text-primary dark:text-primary uppercase tracking-widest">{printer.site}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Departemen</span><span className="text-xs font-bold text-gray-600 dark:text-gray-300">{printer.departemen || '-'}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Nomor PO</span><span className="text-xs font-bold text-gray-600 dark:text-gray-300">#{printer.nomorPO}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Tgl Masuk</span><span className="text-xs font-bold text-gray-600 dark:text-gray-300">{printer.tanggalMasuk ? formatDateWITA(printer.tanggalMasuk) : '-'}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Tgl Kirim</span><span className="text-xs font-bold text-gray-600 dark:text-gray-300">{printer.tanggalKirim ? formatDateWITA(printer.tanggalKirim) : '-'}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-[11px] font-bold text-gray-400 uppercase">Surat Jalan</span><span className="text-xs font-bold text-gray-600 dark:text-gray-300">{printer.nomorSuratJalan || '-'}</span></div>
-                        </div>
+                        <InfoRow label="Site" value={printer.site} highlight />
+                        <InfoRow label="Departemen" value={printer.departemen} />
+                        <InfoRow label="Nomor PO" value={printer.nomorPO ? `#${printer.nomorPO}` : '-'} />
+                        <InfoRow label="Tgl Masuk" value={printer.tanggalMasuk ? formatDateWITA(printer.tanggalMasuk) : '-'} />
+                        <InfoRow label="Tgl Kirim" value={printer.tanggalKirim ? formatDateWITA(printer.tanggalKirim) : '-'} />
+                        <InfoRow label="Surat Jalan" value={printer.nomorSuratJalan} />
                     </div>
                 </div>
 
-                <div className="lg:col-span-8 space-y-8">
+                <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm overflow-hidden">
-                        <div className="p-6 border-b border-[#f1f5f9] dark:border-[#334155] bg-gray-50/50 dark:bg-[#0f172a]/20">
+                        <div className="px-6 py-4 border-b border-[#f1f5f9] dark:border-[#334155] bg-gray-50/50 dark:bg-[#0f172a]/20">
                             <h3 className="text-[10px] font-black text-[#0f172a] dark:text-white uppercase tracking-[0.2em]">Informasi Printer</h3>
                         </div>
-                        <div className="p-8 grid grid-cols-2 sm:grid-cols-3 gap-6">
+                        <div className="p-6 grid grid-cols-2 gap-3">
                             <SpecItem label="Brand" value={printer.brand} />
-                            <SpecItem label="Jumlah" value={printer.jumlah?.toString() || '-'} />
-                            <SpecItem label="Status Barang" value={printer.statusBarang} />
+                            <SpecItem label="Status" value={printer.statusBarang} />
+                            <SpecItem label="Jumlah" value={printer.jumlah?.toString()} />
+                            <SpecItem label="Diperuntukan" value={printer.diperuntukan} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-8 h-full">
-                            <div className="flex items-center gap-3 border-b border-[#f1f5f9] dark:border-[#334155] pb-4 mb-6">
-                                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                    {/* Keterangan & Kerusakan */}
+                    <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-6 space-y-5">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
                                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Keterangan</h3>
                             </div>
-                            <p className="text-sm font-medium text-gray-400 dark:text-gray-400 leading-relaxed">
-                                {printer.keterangan || 'Belum ada keterangan untuk unit ini.'}
-                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{printer.keterangan || 'Belum ada keterangan.'}</p>
                         </div>
-
-                        <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-8 h-full border-l-4 border-l-primary">
-                            <div className="flex items-center gap-3 border-b border-[#f1f5f9] dark:border-[#334155] pb-4 mb-6">
-                                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Detail Pengadaan</h3>
-                            </div>
-                            <div className="space-y-5">
-                                <div>
-                                    <span className="text-[11px] font-bold text-gray-400 uppercase block mb-3">PIC</span>
-                                    <div className="space-y-2">
-                                        {printer.diperuntukan ? (
-                                            printer.diperuntukan.split(',').map((item: string, index: number) => (
-                                                <p key={index} className="text-xs font-bold text-gray-600 dark:text-gray-300 leading-relaxed">
-                                                    {item.trim()}
-                                                </p>
-                                            ))
-                                        ) : (
-                                            <p className="text-xs font-bold text-gray-600 dark:text-gray-300">-</p>
-                                        )}
-                                    </div>
+                        {printer.kerusakan && (
+                            <div className="border-t border-[#f1f5f9] dark:border-[#334155] pt-5">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Kerusakan</h3>
                                 </div>
-                                <div className="pt-3 border-t border-[#f1f5f9] dark:border-[#334155]">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[11px] font-bold text-gray-400 uppercase">Jumlah</span>
-                                        <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{printer.jumlah} Unit</span>
-                                    </div>
-                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed italic">{printer.kerusakan}</p>
                             </div>
-                        </div>
+                        )}
                     </div>
+                </div>
+            </div>
 
-                    {/* Kerusakan */}
-                    {printer.kerusakan && (
-                        <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-sm p-8 border-l-4 border-l-red-500">
-                            <div className="flex items-center gap-3 border-b border-[#f1f5f9] dark:border-[#334155] pb-4 mb-6">
-                                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Kerusakan</h3>
-                            </div>
-                            <p className="text-sm font-medium text-gray-400 dark:text-gray-400 leading-relaxed">
-                                {printer.kerusakan}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Metadata */}
-                    <MetadataCard createdAt={printer.createdAt} updatedAt={printer.updatedAt} />
+            <div className="flex justify-center">
+                <div className="w-full max-w-xl">
+                    <ActivityLogPanel entityType="printer" entityId={printer.id} />
                 </div>
             </div>
         </div>

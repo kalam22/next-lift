@@ -19,14 +19,33 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Don't show error UI for ChunkLoadError — componentDidCatch will handle reload
+    if (
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('Failed to fetch dynamically imported module')
+    ) {
+      return { hasError: false }
+    }
     return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
-    
-    // Bisa dikirim ke logging service di sini
-    // Contoh: logErrorToService(error, errorInfo)
+
+    // Auto-reload on ChunkLoadError (stale chunks after deployment)
+    if (
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('Failed to fetch dynamically imported module')
+    ) {
+      // Avoid infinite reload loop — only reload once per session
+      const reloadKey = 'chunk_error_reload'
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1')
+        window.location.reload()
+      }
+    }
   }
 
   render() {

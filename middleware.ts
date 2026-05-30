@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt'
+import { PATH_TO_MENU } from '@/lib/permissions'
 
-// Note: Redis tidak bisa digunakan di middleware karena middleware berjalan di Edge Runtime
-// yang tidak support Node.js modules. Redis hanya bisa digunakan di API routes (server-side).
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
 
-// Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-
-// Rate limit configuration
-const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 120 // 120 requests per minute per IP (reasonable for SPA)
+const RATE_LIMIT_WINDOW = 60 * 1000
+const RATE_LIMIT_MAX_REQUESTS = 120
 
 function getRateLimitKey(request: NextRequest): string {
-  // Use IP address as the key
   const forwarded = request.headers.get('x-forwarded-for')
   const ip = forwarded ? forwarded.split(',')[0] : request.ip || 'unknown'
   return ip
@@ -21,96 +18,187 @@ function getRateLimitKey(request: NextRequest): string {
 function checkRateLimit(key: string): boolean {
   const now = Date.now()
   const record = rateLimitMap.get(key)
-
-  // Cleanup expired entries (inline cleanup untuk Edge Runtime compatibility)
   if (rateLimitMap.size > 1000) {
-    // Only cleanup if map is getting large
     for (const [k, r] of rateLimitMap.entries()) {
-      if (now > r.resetTime) {
-        rateLimitMap.delete(k)
-      }
+      if (now > r.resetTime) rateLimitMap.delete(k)
     }
   }
-
   if (!record || now > record.resetTime) {
-    // Create new record or reset expired one
-    rateLimitMap.set(key, {
-      count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW,
-    })
+    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW })
     return true
   }
-
-  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return false
-  }
-
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) return false
   record.count++
   return true
 }
 
-// Note: Rate limiting di middleware menggunakan in-memory karena Edge Runtime limitation
-// Untuk persistent rate limiting dengan Redis, bisa diimplementasikan di API routes level
-// Cleanup dilakukan inline saat checkRateLimit untuk menghindari setInterval di Edge Runtime
+// ─── Public routes (no auth required) ────────────────────────────────────────
 
-export function middleware(request: NextRequest) {
+const PUBLIC_PATHS = ['/login', '/api/auth']
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
+}
+
+// ─── Super admin check — accepts 'super_admin', 'superadmin', etc. ────────────
+
+function isSuperAdmin(role: unknown): boolean {
+  if (!role || typeof role !== 'string') return false
+  return role.toLowerCase().replace(/[_\s-]/g, '') === 'superadmin'
+}
+
+// ─── Determine required permission from pathname ──────────────────────────────
+
+function getRequiredPermission(pathname: string): 'view' | 'create' | 'edit' {
+  // /menu/create → create permission
+  if (pathname.endsWith('/create') || pathname.includes('/create/')) return 'create'
+  // /menu/[id]/edit → edit permission
+  if (pathname.endsWith('/edit') || pathname.includes('/edit/')) return 'edit'
+  // everything else (list, view, history) → view permission
+  return 'view'
+}
+
+function getMenuKeyFromPath(pathname: string): string | null {
+  if (PATH_TO_MENU[pathname]) return PATH_TO_MENU[pathname]
+  for (const [path, menuKey] of Object.entries(PATH_TO_MENU)) {
+    if (pathname.startsWith(path + '/')) return menuKey
+  }
+  return null
+}
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
   const startTime = Date.now()
 
-  // Only apply rate limiting to API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  // Rate limiting for API routes
+  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth')) {
     const key = getRateLimitKey(request)
-    const allowed = checkRateLimit(key)
-
-    if (!allowed) {
+    if (!checkRateLimit(key)) {
       return NextResponse.json(
-        {
-          error: 'Too many requests',
-          message: 'Rate limit exceeded. Please try again later.',
-        },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': '60',
-          },
-        }
+        { error: 'Too many requests', message: 'Rate limit exceeded. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
       )
     }
   }
 
-  // Create response with performance monitoring
+  // Redirect root / to /dashboard
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  // Auth check — skip for public paths and static assets
+  if (!isPublicPath(pathname)) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+
+    if (!token) {
+      // API routes return 401
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      // Pages redirect to login
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Check if user account is still active
+    if (token.isActive === false) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Unauthorized', message: 'Akun Anda tidak aktif.' },
+          { status: 401 }
+        )
+      }
+      // Clear the session cookie and redirect to login (no error param to avoid loops)
+      const loginUrl = new URL('/login', request.url)
+      const response = NextResponse.redirect(loginUrl)
+      // Delete NextAuth session cookies so the token is gone on arrival at /login
+      const cookiesToClear = [
+        'next-auth.session-token',
+        '__Secure-next-auth.session-token',
+        'next-auth.csrf-token',
+        '__Secure-next-auth.csrf-token',
+        '__Host-next-auth.csrf-token',
+      ]
+      cookiesToClear.forEach((name) => {
+        response.cookies.delete(name)
+      })
+      return response
+    }
+
+    // Token exists — run permission checks
+
+    // Protect /user-management — super_admin only (checked before general permission check)
+    if (pathname.startsWith('/user-management')) {
+      if (!isSuperAdmin(token.role)) {
+        return NextResponse.rewrite(new URL('/403', request.url))
+      }
+    }
+    if (pathname.startsWith('/api/user-management')) {
+      if (!isSuperAdmin(token.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    // Permission check for page routes (non-API)
+    if (!pathname.startsWith('/api/')) {
+      const menuKey = getMenuKeyFromPath(pathname)
+      if (menuKey) {
+        const requiredPermission = getRequiredPermission(pathname)
+        const permissions = token.permissions as Record<string, string[]>
+        const hasPermission =
+          isSuperAdmin(token.role) ||
+          permissions?.[menuKey]?.includes(requiredPermission)
+        if (!hasPermission) {
+          return NextResponse.rewrite(new URL('/403', request.url))
+        }
+      }
+    }
+  }
+
+  // If already logged in and visiting /login, redirect to dashboard
+  if (pathname === '/login') {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
   const response = NextResponse.next()
 
-  // Add security headers to all responses
+  // Security headers
   const securityHeaders: Record<string, string> = {
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   }
-
-  // Add HSTS for production
   if (process.env.NODE_ENV === 'production') {
     securityHeaders['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
   }
-
-  // Content Security Policy - adjusted for Next.js and Tailwind
   securityHeaders['Content-Security-Policy'] = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 'unsafe-eval' for Next.js, 'unsafe-inline' for inline scripts
-    "style-src 'self' 'unsafe-inline'", // 'unsafe-inline' for Tailwind
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data: https:",
     "connect-src 'self'",
     "frame-ancestors 'none'",
   ].join('; ')
 
-  // Apply security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value)
   })
 
-  // Track API response time
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/')) {
     response.headers.set('X-Request-Start-Time', startTime.toString())
   }
 
@@ -118,8 +206,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)', '/api/:path*'],
 }
-

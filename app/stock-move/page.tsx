@@ -5,6 +5,8 @@ import axios from 'axios'
 import Swal from 'sweetalert2'
 import ExcelJS from 'exceljs'
 import { logger } from '@/lib/logger'
+import ActivityLogPanel from '@/components/ActivityLogPanel'
+import { usePermissions } from '@/hooks/usePermissions'
 import type { StockTransaction } from '@/types/entities'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,7 +45,9 @@ function DynamicSelect({ value, onChange, apiEndpoint, placeholder = 'Pilih...',
   const [addingNew, setAddingNew] = useState(false)
   const [newName, setNewName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const fetchItems = useCallback(async () => {
     try { const r = await axios.get<{ id: number; nama: string }[]>(apiEndpoint); setItems(Array.isArray(r.data) ? r.data : []) } catch {}
@@ -51,13 +55,25 @@ function DynamicSelect({ value, onChange, apiEndpoint, placeholder = 'Pilih...',
 
   useEffect(() => { fetchItems() }, [fetchItems])
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setShowManage(false); setAddingNew(false); setNewName('') } }
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setShowManage(false); setAddingNew(false); setNewName(''); setSearch('') } }
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
   }, [])
 
+  // Auto-focus search input when dropdown opens
+  useEffect(() => {
+    if (open && !showManage) {
+      setTimeout(() => searchRef.current?.focus(), 50)
+    }
+    if (!open) setSearch('')
+  }, [open, showManage])
+
+  const filteredItems = items.filter(item =>
+    item.nama.toLowerCase().includes(search.toLowerCase())
+  )
+
   const handleAdd = async () => {
     const t = newName.trim(); if (!t) return; setSaving(true)
-    try { await axios.post(apiEndpoint, { nama: t }); await fetchItems(); onChange(t); setAddingNew(false); setNewName(''); setOpen(false) } catch {} finally { setSaving(false) }
+    try { await axios.post(apiEndpoint, { nama: t }); await fetchItems(); onChange(t); setAddingNew(false); setNewName(''); setOpen(false); setSearch('') } catch {} finally { setSaving(false) }
   }
 
   const handleDelete = async (id: number, nama: string) => {
@@ -92,13 +108,41 @@ function DynamicSelect({ value, onChange, apiEndpoint, placeholder = 'Pilih...',
               ))}
             </div>
           ) : (
-            <div className="max-h-60 overflow-y-auto custom-scrollbar">
-              {items.map(item => (
-                <button key={item.id} type="button" onClick={() => { onChange(item.nama); setOpen(false) }}
-                  className={`w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors ${value === item.nama ? 'text-primary bg-primary/5' : 'text-slate-800 dark:text-slate-200'}`}>
-                  {item.nama}
-                </button>
-              ))}
+            <div>
+              {/* Search input */}
+              <div className="p-2 border-b border-[#f1f5f9] dark:border-[#1e293b]">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
+                    placeholder="Cari..."
+                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-white/5 border border-[#e2e8f0] dark:border-[#334155] rounded-xl outline-none focus:border-primary/50 text-slate-900 dark:text-slate-50 placeholder:text-gray-400"
+                  />
+                  {search && (
+                    <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="max-h-52 overflow-y-auto custom-scrollbar">
+                {filteredItems.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4 font-bold">Tidak ditemukan</p>
+                ) : (
+                  filteredItems.map(item => (
+                    <button key={item.id} type="button" onClick={() => { onChange(item.nama); setOpen(false); setSearch('') }}
+                      className={`w-full text-left px-4 py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors ${value === item.nama ? 'text-primary bg-primary/5' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {item.nama}
+                    </button>
+                  ))
+                )}
+              </div>
+
               {addingNew ? (
                 <div className="px-3 py-2 border-t border-[#f1f5f9] dark:border-[#1e293b] flex gap-2">
                   <input autoFocus type="text" value={newName} onChange={e => setNewName(e.target.value)}
@@ -140,10 +184,49 @@ function NamaBarangInput({ value, onChange, typeBarang }: { value: string; onCha
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
   }, [])
 
+  // Fetch all item names when typeBarang changes
+  useEffect(() => {
+    if (!typeBarang) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    const fetchItemNames = async () => {
+      try {
+        const r = await axios.get<string[]>(`/api/stock-move/nama-suggestions?typeBarang=${encodeURIComponent(typeBarang)}`)
+        setSuggestions(r.data || [])
+        // Auto-show dropdown if there are suggestions and input is focused
+        if ((r.data || []).length > 0) {
+          setShowSuggestions(true)
+        }
+      } catch {
+        setSuggestions([])
+        setShowSuggestions(false)
+      }
+    }
+
+    fetchItemNames()
+  }, [typeBarang])
+
   const handleChange = (v: string) => {
     onChange(v)
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (!v.trim() || !typeBarang) { setSuggestions([]); setShowSuggestions(false); return }
+    if (!v.trim() || !typeBarang) { 
+      // If cleared, fetch all items for the type again
+      if (!v.trim() && typeBarang) {
+        timerRef.current = setTimeout(async () => {
+          try {
+            const r = await axios.get<string[]>(`/api/stock-move/nama-suggestions?typeBarang=${encodeURIComponent(typeBarang)}`)
+            setSuggestions(r.data || [])
+            setShowSuggestions((r.data || []).length > 0)
+          } catch { setSuggestions([]); setShowSuggestions(false) }
+        }, 100)
+      } else {
+        setShowSuggestions(false)
+      }
+      return
+    }
     timerRef.current = setTimeout(async () => {
       try {
         const r = await axios.get<string[]>(`/api/stock-move/nama-suggestions?q=${encodeURIComponent(v)}&typeBarang=${encodeURIComponent(typeBarang)}`)
@@ -382,7 +465,7 @@ function ExportModal({ onClose, search, typeFilter }: { onClose: () => void; sea
       filtered.forEach(tx => {
         const row: Record<string, string | number> = {}
         if (selectedCols.has('partType')) row.partType = tx.partType
-        if (selectedCols.has('tanggal')) row.tanggal = new Date(tx.tanggal).toLocaleDateString('id-ID')
+        if (selectedCols.has('tanggal')) row.tanggal = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Makassar', day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(tx.tanggal))
         if (selectedCols.has('typeBarang')) row.typeBarang = tx.typeBarang
         if (selectedCols.has('namaBarang')) row.namaBarang = tx.namaBarang
         if (selectedCols.has('quality')) row.quality = tx.quality
@@ -522,6 +605,8 @@ function StockSummaryCards({ summary, activeFilter, onFilter }: { summary: Stock
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function StockMovePage() {
+  const { canCreate, canEdit, canDelete, canExport } = usePermissions('stock_move')
+  const [logRefreshKey, setLogRefreshKey] = useState(0)
   const [transactions, setTransactions] = useState<StockTransaction[]>([])
   const [stockSummary, setStockSummary] = useState<StockSummaryItem[]>([])
   const [pagination, setPagination] = useState<PaginationMeta>({ page: 1, limit: 10, total: 0, totalPages: 1 })
@@ -573,10 +658,13 @@ export default function StockMovePage() {
   const handleDelete = async (id: number) => {
     const r = await Swal.fire({ title: 'Hapus transaksi?', text: 'Data yang dihapus tidak dapat dikembalikan!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Hapus!', cancelButtonText: 'Batal', reverseButtons: true, buttonsStyling: false, customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' } })
     if (!r.isConfirmed) return
-    try { await axios.delete(`/api/stock-move/${id}`); fetchData(pagination.page) } catch { Swal.fire({ title: 'Gagal!', text: 'Gagal menghapus transaksi.', icon: 'error', confirmButtonText: 'OK', buttonsStyling: false, customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' } }) }
+    try { await axios.delete(`/api/stock-move/${id}`); fetchData(pagination.page); setLogRefreshKey(k => k + 1) } catch { Swal.fire({ title: 'Gagal!', text: 'Gagal menghapus transaksi.', icon: 'error', confirmButtonText: 'OK', buttonsStyling: false, customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' } }) }
   }
 
-  const fmt = (d: Date | string) => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  const fmt = (d: Date | string) => new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Makassar',
+    day: '2-digit', month: 'short', year: 'numeric',
+  }).format(new Date(d))
 
   return (
     <div className="min-h-screen mesh-gradient dark:mesh-gradient-dark p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -588,22 +676,26 @@ export default function StockMovePage() {
           <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-[0.2em] opacity-60">Inventory / Pergerakan Stok</p>
         </div>
         <div className="flex items-center gap-3 self-start sm:self-auto">
+          {canExport && (
           <button onClick={() => setShowExport(true)} className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#0f172a] border border-[#f1f5f9] dark:border-[#1e293b] rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/5 whitespace-nowrap">
             <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Export
           </button>
+          )}
+          {canCreate && (
           <button onClick={() => setShowForm(f => !f)} className="btn-premium flex items-center gap-2 px-5 py-3 text-[11px]">
             <svg className={`w-4 h-4 transition-transform ${showForm ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">{showForm ? 'Tutup Form' : 'Tambah Transaksi'}</span>
           </button>
+          )}
         </div>
       </div>
 
       {/* Add Form */}
-      {showForm && (
+      {showForm && canCreate && (
         <div className="premium-card p-6 sm:p-8 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-3 mb-6"><div className="w-1 h-6 bg-primary rounded-full" /><h2 className="text-sm font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Tambah Transaksi Baru</h2></div>
-          <AddTransactionForm onSuccess={() => { setShowForm(false); fetchData(1) }} />
+          <AddTransactionForm onSuccess={() => { setShowForm(false); fetchData(1); setLogRefreshKey(k => k + 1) }} />
         </div>
       )}
 
@@ -688,7 +780,7 @@ export default function StockMovePage() {
               ) : (
                 transactions.map((tx, index) => {
                   const rowNum = (pagination.page - 1) * pagination.limit + index + 1
-                  if (editingId === tx.id) return <EditRow key={tx.id} transaction={tx} onSave={() => { setEditingId(null); fetchData(pagination.page) }} onCancel={() => setEditingId(null)} />
+                  if (editingId === tx.id) return <EditRow key={tx.id} transaction={tx} onSave={() => { setEditingId(null); fetchData(pagination.page); setLogRefreshKey(k => k + 1) }} onCancel={() => setEditingId(null)} />
                   return (
                     <tr key={tx.id} className="group hover:bg-primary/[0.02] dark:hover:bg-primary/[0.03] transition-all duration-300">
                       <td className="px-4 sm:px-6 py-4 sm:py-5"><span className="text-xs font-black text-gray-400">{rowNum}</span></td>
@@ -707,12 +799,16 @@ export default function StockMovePage() {
                       <td className="px-3 sm:px-4 py-4 sm:py-5">{tx.keterangan ? <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{tx.keterangan}</span> : <span className="text-[10px] text-gray-300 dark:text-gray-600">—</span>}</td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5">
                         <div className="flex items-center justify-end gap-2">
+                          {canEdit && (
                           <button onClick={() => setEditingId(tx.id)} title="Edit" className="p-2 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-white/5 rounded-xl text-gray-400 hover:text-amber-500 hover:scale-110 hover:shadow-xl hover:shadow-amber-500/10 transition-all">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
+                          )}
+                          {canDelete && (
                           <button onClick={() => handleDelete(tx.id)} title="Hapus" className="p-2 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-white/5 rounded-xl text-gray-400 hover:text-red-500 hover:scale-110 hover:shadow-xl hover:shadow-red-500/10 transition-all">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -761,6 +857,13 @@ export default function StockMovePage() {
 
       {/* Stock Summary Cards */}
       <StockSummaryCards summary={stockSummary} activeFilter={typeFilter} onFilter={handleTypeFilter} />
+
+      {/* Log Aktivitas */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl">
+          <ActivityLogPanel key={logRefreshKey} entityType="stock_move" entityId={0} />
+        </div>
+      </div>
 
       {/* Export Modal */}
       {showExport && <ExportModal onClose={() => setShowExport(false)} search={search} typeFilter={typeFilter} />}

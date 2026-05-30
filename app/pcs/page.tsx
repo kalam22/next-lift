@@ -6,10 +6,12 @@ import Image from 'next/image'
 import { useDataTable } from '@/hooks/useDataTable'
 import { useExcelImport } from '@/hooks/useExcelImport'
 import { useExcelExport } from '@/hooks/useExcelExport'
+import { usePermissions } from '@/hooks/usePermissions'
 import { PC_HEADER_MAP, PC_LAPTOP_VALIDATOR, PC_LAPTOP_REQUIRED_FIELDS } from '@/lib/excel-header-maps'
 import type { PC } from '@/types/entities'
 
 export default function PCsPage() {
+  const { canCreate, canEdit, canDelete, canExport, canImport } = usePermissions('pcs')
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
   const {
     data: pcs,
@@ -100,6 +102,7 @@ export default function PCsPage() {
           <p className="text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-[0.2em] opacity-60">Inventory / PC Units</p>
         </div>
         <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+          {canImport && (
           <label className="flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-white dark:bg-[#0f172a] border border-[#f1f5f9] dark:border-[#1e293b] rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/5 cursor-pointer">
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
             Import
@@ -110,6 +113,8 @@ export default function PCsPage() {
               className="hidden"
             />
           </label>
+          )}
+          {canExport && (
           <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-white dark:bg-[#0f172a] border border-[#f1f5f9] dark:border-[#1e293b] rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-gray-600 dark:text-gray-300 hover:bg-gray-50 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-black/5"
@@ -117,6 +122,8 @@ export default function PCsPage() {
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             Export
           </button>
+          )}
+          {canCreate && (
           <Link
             href="/pcs/create"
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-primary hover:bg-primary/90 shadow-primary/25 text-[10px] sm:text-[11px]"
@@ -124,6 +131,7 @@ export default function PCsPage() {
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Register Unit</span>
           </Link>
+          )}
         </div>
       </div>
 
@@ -160,6 +168,7 @@ export default function PCsPage() {
                 </button>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
+                {canDelete && (
                 <button
                   onClick={handleBulkDelete}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 hover:scale-105 active:scale-95"
@@ -167,6 +176,7 @@ export default function PCsPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   Hapus ({selectedItems.size})
                 </button>
+                )}
               </div>
             </div>
           </div>
@@ -176,7 +186,7 @@ export default function PCsPage() {
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-gray-50/30 dark:bg-black/10 uppercase font-black text-[10px] tracking-[0.25em] text-gray-400/80">
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 w-12">
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 w-12">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -189,15 +199,15 @@ export default function PCsPage() {
                     />
                   </div>
                 </th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[60px]">NO</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[200px]">BRAND</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[150px]">SPESIFIKASI</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[150px]">PIC</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]">SITE</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]">DEPARTEMEN</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]">STATUS</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]">FOTO</th>
-                <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 text-right min-w-[140px]">ACTION</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[60px]">NO</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[200px]">BRAND</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[150px]">SPESIFIKASI</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[150px]">PIC</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[120px]">SITE</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[120px]">DEPARTEMEN</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[120px]">STATUS</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[120px]">FOTO</th>
+                <th className="px-3 sm:px-4 py-2.5 sm:py-3 text-right min-w-[140px]">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100/50 dark:divide-white/[0.02]">
@@ -243,7 +253,7 @@ export default function PCsPage() {
                   const rowNumber = (currentPage - 1) * itemsPerPage + index + 1
                   return (
                     <tr key={pc.id} className={`group hover:bg-primary/5/30 dark:hover:bg-primary/50/[0.02] transition-all duration-500 ease-out ${selectedItems.has(pc.id) ? 'bg-primary/5/50 dark:bg-primary/50/10' : ''}`}>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <div className="flex items-center">
                           <input
                             type="checkbox"
@@ -253,35 +263,35 @@ export default function PCsPage() {
                           />
                         </div>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <span className="text-xs font-black text-gray-500 dark:text-gray-400">{rowNumber}</span>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <Link href={`/pcs/${pc.id}/view`} className="flex flex-col hover:opacity-80 transition-opacity">
                           <span className="text-sm font-black text-[#020617] dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">{pc.merk}</span>
                         </Link>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <div className="flex flex-col">
                           <span className="text-[10px] sm:text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight">{pc.prosesor}</span>
                           <span className="text-[9px] sm:text-[10px] text-primary font-black uppercase tracking-widest mt-0.5">{pc.ram} RAM / {pc.ssdHdd}</span>
                         </div>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <span className="text-xs sm:text-sm font-black text-[#020617] dark:text-white uppercase tracking-tight underline decoration-primary/20 underline-offset-8 decoration-2">{pc.untuk}</span>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <span className="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-xl bg-gray-100 dark:bg-white/5 border border-white/50 dark:border-white/5 text-[9px] sm:text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest shadow-sm whitespace-nowrap">
                           <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                           {pc.site}
                         </span>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <span className="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-xl bg-gray-100 dark:bg-white/5 border border-white/50 dark:border-white/5 text-[9px] sm:text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest shadow-sm whitespace-nowrap">
                           {pc.departemen || '-'}
                         </span>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <div className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 rounded-full ring-1 ring-inset ${
                           pc.status?.toUpperCase() === 'BARU'
                             ? 'bg-green-500/5 text-green-500 ring-green-500/20'
@@ -307,7 +317,7 @@ export default function PCsPage() {
                           <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] whitespace-nowrap">{pc.status}</span>
                         </div>
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         {pc.gambar ? (
                           <div className="flex items-center justify-center">
                             {imageErrors.has(pc.id) ? (
@@ -346,7 +356,7 @@ export default function PCsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                      <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                         <div className="flex items-center justify-end gap-1 sm:gap-2 lg:gap-3">
                           <Link
                             href={`/pcs/${pc.id}/view`}
@@ -355,6 +365,7 @@ export default function PCsPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </Link>
+                          {canEdit && (
                           <Link
                             href={`/pcs/${pc.id}/edit`}
                             className="p-2.5 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-white/5 rounded-xl text-gray-400 hover:text-amber-500 hover:scale-110 hover:shadow-xl hover:shadow-amber-500/10 transition-all font-sans"
@@ -362,6 +373,8 @@ export default function PCsPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </Link>
+                          )}
+                          {canDelete && (
                           <button
                             onClick={() => handleDelete(pc.id)}
                             className="p-2.5 bg-white dark:bg-[#0f172a] border border-gray-100 dark:border-white/5 rounded-xl text-gray-400 hover:text-red-500 hover:scale-110 hover:shadow-xl hover:shadow-red-500/10 transition-all"
@@ -369,6 +382,7 @@ export default function PCsPage() {
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>

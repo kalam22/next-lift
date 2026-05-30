@@ -9,6 +9,9 @@ import { validateRequest } from '@/lib/validation-helpers'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Monitor } from '@/types/entities'
 
 export async function GET(
@@ -144,6 +147,23 @@ export async function PUT(
     await cache.delete('/api/monitor')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingMonitor.brand, newValue: validatedData.brand },
+      { label: 'Site', oldValue: existingMonitor.site, newValue: validatedData.site },
+      { label: 'Departemen', oldValue: existingMonitor.departemen, newValue: validatedData.departemen },
+      { label: 'Status', oldValue: existingMonitor.statusBarang, newValue: validatedData.statusBarang },
+      { label: 'Diperuntukan', oldValue: existingMonitor.diperuntukan, newValue: validatedData.diperuntukan },
+      { label: 'Jumlah', oldValue: existingMonitor.jumlahOrderan, newValue: validatedData.jumlahOrderan },
+      { label: 'Nomor PO', oldValue: existingMonitor.nomorPO, newValue: validatedData.nomorPO },
+      { label: 'Surat Jalan', oldValue: existingMonitor.nomorSuratJalan, newValue: validatedData.nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingMonitor.keterangan, newValue: validatedData.keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingMonitor.tanggalMasuk), newValue: formatDateForDiff(new Date(validatedData.tanggalMasuk)) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingMonitor.tanggalKirim), newValue: formatDateForDiff(validatedData.tanggalKirim ? new Date(validatedData.tanggalKirim) : null) },
+      { label: 'Foto', oldValue: existingMonitor.foto ? 'Ada' : '-', newValue: validatedData.foto ? (validatedData.foto !== existingMonitor.foto ? 'Diperbarui' : 'Ada') : (existingMonitor.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'monitor', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data Monitor "${validatedData.brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return successResponse(monitor)
   } catch (error: unknown) {
     logger.error('Error updating monitor:', error)
@@ -193,6 +213,9 @@ export async function DELETE(
     await cache.delete(`/api/monitor/${id}`)
     await cache.delete('/api/monitor')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'monitor', entityId: parseInt(id), action: 'DELETE', description: 'Data Monitor dihapus', userId: user?.id, userName: user?.name })
 
     return successResponse({ message: 'Monitor deleted successfully' })
   } catch (error: unknown) {

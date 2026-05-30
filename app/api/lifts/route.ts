@@ -5,6 +5,8 @@ import { cache } from '@/lib/cache'
 import { validateRequest } from '@/lib/validation-helpers'
 import { liftSchema } from '@/lib/validations/lifts'
 import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Lift } from '@/types/lift'
 
 // Helper function untuk compute fields - now uses per-call timestamp (no stale cache)
@@ -234,7 +236,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    await cache.delete('/api/lifts')
+    await cache.deleteByPrefix('/api/lifts')
+
+    const user = await getSessionUser(request)
+    logActivity({
+      entityType: 'lift',
+      entityId: lift.id,
+      action: 'CREATE',
+      description: `Data lift "${nama}" ditambahkan`,
+      userId: user?.id,
+      userName: user?.name,
+    })
 
     return NextResponse.json(lift, { status: 201 })
   } catch (error) {

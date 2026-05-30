@@ -289,6 +289,27 @@ export const cache = {
   },
 
   /**
+   * Delete all cache entries whose key starts with the given prefix
+   */
+  deleteByPrefix: async (prefix: string): Promise<void> => {
+    // Delete from in-memory cache
+    for (const key of (apiCache as any).cache.keys()) {
+      if (key.startsWith(prefix)) {
+        apiCache.delete(key)
+      }
+    }
+
+    // Also delete from Redis if available
+    if (isRedisAvailable()) {
+      try {
+        await redisDeletePattern(`${prefix}*`)
+      } catch (error) {
+        // Silent fail
+      }
+    }
+  },
+
+  /**
    * Clear all cache (clears both Redis and in-memory)
    */
   clear: async (): Promise<void> => {

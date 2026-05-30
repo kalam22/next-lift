@@ -13,12 +13,15 @@ export async function GET(request: NextRequest) {
     if (q) where.namaBarang = { contains: q, mode: 'insensitive' }
     if (typeBarang) where.typeBarang = { equals: typeBarang, mode: 'insensitive' }
 
+    // When fetching all items for a type (no search query), return more results
+    const limit = q ? 10 : 50
+
     const results = await prisma.stockTransaction.findMany({
       where,
       select: { namaBarang: true },
       distinct: ['namaBarang'],
       orderBy: { namaBarang: 'asc' },
-      take: 10,
+      take: limit,
     })
 
     return NextResponse.json(results.map(r => r.namaBarang))

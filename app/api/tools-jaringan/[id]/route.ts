@@ -7,6 +7,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { deleteImageFile } from '@/lib/fileUtils'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { ToolsJaringan } from '@/types/entities'
 
 export async function GET(
@@ -200,6 +203,23 @@ export async function PUT(
     await cache.delete('/api/tools-jaringan')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingToolsJaringan.brand, newValue: brand },
+      { label: 'Site', oldValue: existingToolsJaringan.site, newValue: site },
+      { label: 'Departemen', oldValue: existingToolsJaringan.departemen, newValue: departemen },
+      { label: 'Status', oldValue: existingToolsJaringan.statusBarang, newValue: statusBarang },
+      { label: 'Jumlah', oldValue: existingToolsJaringan.jumlahOrderan, newValue: jumlahOrderan },
+      { label: 'Diperuntukan', oldValue: existingToolsJaringan.diperuntukan, newValue: diperuntukan },
+      { label: 'Nomor PO', oldValue: existingToolsJaringan.nomorPO, newValue: nomorPO },
+      { label: 'Surat Jalan', oldValue: existingToolsJaringan.nomorSuratJalan, newValue: nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingToolsJaringan.keterangan, newValue: keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingToolsJaringan.tanggalMasuk), newValue: formatDateForDiff(tanggalMasukDate) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingToolsJaringan.tanggalKirim), newValue: formatDateForDiff(tanggalKirimDate) },
+      { label: 'Foto', oldValue: existingToolsJaringan.foto ? 'Ada' : '-', newValue: foto ? (foto !== existingToolsJaringan.foto ? 'Diperbarui' : 'Ada') : (existingToolsJaringan.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'tools_jaringan', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data Tools Jaringan "${brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return NextResponse.json(toolsJaringan)
   } catch (error: unknown) {
     logger.error('Error updating tools jaringan:', error)
@@ -241,6 +261,9 @@ export async function DELETE(
     await cache.delete(`/api/tools-jaringan/${id}`)
     await cache.delete('/api/tools-jaringan')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'tools_jaringan', entityId: toolsJaringanId, action: 'DELETE', description: 'Data Tools Jaringan dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'Tools Jaringan deleted successfully' })
   } catch (error: unknown) {

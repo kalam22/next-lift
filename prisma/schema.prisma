@@ -381,3 +381,53 @@ model StockVendor {
   @@unique([nama], map: "idx_stock_vendors_nama")
   @@map("stock_vendors")
 }
+
+model User {
+  id           Int              @id @default(autoincrement())
+  name         String           @db.VarChar(191)
+  username     String           @unique @db.VarChar(100)
+  password     String           @db.VarChar(255)
+  role         String           @default("user") @db.VarChar(50)
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  permissions  UserPermission[]
+  activityLogs ActivityLog[]
+
+  @@index([username], map: "idx_users_username")
+  @@map("users")
+}
+
+model UserPermission {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  menu       String   @db.VarChar(50)
+  permission String   @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, menu, permission], map: "idx_user_permissions_unique")
+  @@index([userId, menu], map: "idx_user_permissions_user_menu")
+  @@index([userId, menu, permission], map: "idx_user_permissions_lookup")
+  @@map("user_permissions")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  entityType  String   @map("entity_type") @db.VarChar(50)
+  entityId    Int      @map("entity_id")
+  action      String   @db.VarChar(20)
+  description String?  @db.VarChar(500)
+  userId      Int?     @map("user_id")
+  userName    String?  @map("user_name") @db.VarChar(191)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId], map: "idx_activity_log_entity")
+  @@index([userId], map: "idx_activity_log_user")
+  @@index([createdAt], map: "idx_activity_log_created_at")
+  @@index([entityType, entityId, createdAt], map: "idx_activity_log_entity_time")
+  @@map("activity_logs")
+}

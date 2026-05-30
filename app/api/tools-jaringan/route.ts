@@ -6,6 +6,8 @@ import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { ToolsJaringan, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -254,6 +256,9 @@ export async function POST(request: NextRequest) {
     // Invalidate cache
     await cache.delete('/api/tools-jaringan')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'tools_jaringan', entityId: toolsJaringan.id, action: 'CREATE', description: `Data Tools Jaringan "${brand}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return NextResponse.json(toolsJaringan, { status: 201 })
   } catch (error: unknown) {

@@ -4,6 +4,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { handleDbError } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription } from '@/lib/diff-fields'
 
 export async function PUT(
   request: NextRequest,
@@ -40,6 +43,24 @@ export async function PUT(
     await cache.delete('/api/stock-move')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const oldTx = await (prisma as any).stockTransaction.findUnique({ where: { id: parseInt(id) }, select: { partType: true, namaBarang: true, typeBarang: true, quality: true, vendorTujuan: true } }).catch(() => null)
+    const diffDesc = oldTx ? buildDiffDescription([
+      { label: 'Tipe', oldValue: oldTx.partType, newValue: partType },
+      { label: 'Nama', oldValue: oldTx.namaBarang, newValue: namaBarang },
+      { label: 'Type', oldValue: oldTx.typeBarang, newValue: typeBarang },
+      { label: 'Qty', oldValue: oldTx.quality, newValue: quality },
+      { label: 'Vendor', oldValue: oldTx.vendorTujuan, newValue: vendorTujuan },
+    ]) : null
+    logActivity({
+      entityType: 'stock_move',
+      entityId: parseInt(id),
+      action: 'UPDATE',
+      description: diffDesc ?? `${partType} ${namaBarang} diperbarui`,
+      userId: user?.id,
+      userName: user?.name,
+    })
+
     return NextResponse.json(transaction)
   } catch (error: unknown) {
     logger.error('Error updating stock transaction:', error)
@@ -56,9 +77,30 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+
+    // Ambil data sebelum dihapus untuk log yang informatif
+    const existing = await prisma.stockTransaction.findUnique({
+      where: { id: parseInt(id) },
+      select: { partType: true, namaBarang: true, typeBarang: true, quality: true, vendorTujuan: true },
+    })
+
     await prisma.stockTransaction.delete({ where: { id: parseInt(id) } })
     await cache.delete('/api/stock-move')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    const desc = existing
+      ? `${existing.partType} ${existing.namaBarang} (${existing.typeBarang}) — ${existing.partType === 'MASUK' ? '+' : '-'}${existing.quality} unit${existing.vendorTujuan ? ` · ${existing.vendorTujuan}` : ''} dihapus`
+      : 'Transaksi stok dihapus'
+    logActivity({
+      entityType: 'stock_move',
+      entityId: parseInt(id),
+      action: 'DELETE',
+      description: desc,
+      userId: user?.id,
+      userName: user?.name,
+    })
+
     return NextResponse.json({ message: 'Transaction deleted successfully' })
   } catch (error: unknown) {
     logger.error('Error deleting stock transaction:', error)

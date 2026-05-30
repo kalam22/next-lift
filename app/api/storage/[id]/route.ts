@@ -10,6 +10,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { deleteImageFile } from '@/lib/fileUtils'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Storage } from '@/types/entities'
 
 export async function GET(
@@ -133,6 +136,24 @@ export async function PUT(
     await cache.delete('/api/storage')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingStorage.brand, newValue: validatedData.brand },
+      { label: 'Site', oldValue: existingStorage.site, newValue: validatedData.site },
+      { label: 'Departemen', oldValue: existingStorage.departemen, newValue: validatedData.departemen },
+      { label: 'Status', oldValue: existingStorage.statusBarang, newValue: validatedData.statusBarang },
+      { label: 'Storage', oldValue: existingStorage.storage, newValue: validatedData.storage },
+      { label: 'Jumlah', oldValue: existingStorage.jumlahOrderan, newValue: validatedData.jumlahOrderan },
+      { label: 'Diperuntukan', oldValue: existingStorage.diperuntukan, newValue: validatedData.diperuntukan },
+      { label: 'Nomor PO', oldValue: existingStorage.nomorPO, newValue: validatedData.nomorPO },
+      { label: 'Surat Jalan', oldValue: existingStorage.nomorSuratJalan, newValue: validatedData.nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingStorage.keterangan, newValue: validatedData.keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingStorage.tanggalMasuk), newValue: formatDateForDiff(new Date(validatedData.tanggalMasuk)) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingStorage.tanggalKirim), newValue: formatDateForDiff(validatedData.tanggalKirim ? new Date(validatedData.tanggalKirim) : null) },
+      { label: 'Foto', oldValue: existingStorage.foto ? 'Ada' : '-', newValue: validatedData.foto ? (validatedData.foto !== existingStorage.foto ? 'Diperbarui' : 'Ada') : (existingStorage.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'storage', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data Storage "${validatedData.brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return successResponse(storage)
   } catch (error: unknown) {
     logger.error('Error updating storage:', error)
@@ -182,6 +203,9 @@ export async function DELETE(
     await cache.delete(`/api/storage/${id}`)
     await cache.delete('/api/storage')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'storage', entityId: parseInt(id), action: 'DELETE', description: 'Data Storage dihapus', userId: user?.id, userName: user?.name })
 
     return successResponse({ message: 'Storage deleted successfully' })
   } catch (error: unknown) {

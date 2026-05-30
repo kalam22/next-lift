@@ -6,6 +6,8 @@ import { validateRequest } from '@/lib/validation-helpers'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Cctv, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -171,6 +173,9 @@ export async function POST(request: NextRequest) {
     // Invalidate cache
     await cache.delete('/api/cctv')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'cctv', entityId: cctv.id, action: 'CREATE', description: `Data CCTV "${validatedData.brand}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return successResponse(cctv, 201)
   } catch (error: unknown) {

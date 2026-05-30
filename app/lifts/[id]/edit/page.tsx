@@ -12,7 +12,7 @@ const PT_OPTIONS = ['GPE', 'THS']
 const DEPARTEMEN_OPTIONS = [
   'IT', 'Purchasing', 'Lantai 3', 'Geologis', 'Manager', 'Procurement',
   'Logistic', 'Sekretaris', 'Asset', 'Finance', 'Accounting', 'OB',
-  'HRGA', 'Pajak', 'Plant', 'Security', 'Driver', 'Kasir', 'Legal',
+  'HRGA', 'Pajak', 'Plant', 'Security', 'Driver', 'Kasir', 'Legal', 'Leasing',
 ]
 const LANTAI_OPTIONS = [3, 5, 7]
 

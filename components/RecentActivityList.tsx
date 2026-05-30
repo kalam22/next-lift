@@ -1,5 +1,4 @@
 import React from 'react'
-import { formatWITA } from '@/lib/date-utils'
 
 interface Activity {
   menu: string
@@ -7,6 +6,7 @@ interface Activity {
   action: 'masuk' | 'keluar'
   quantity: number
   site: string
+  pic: string
   timestamp: string
   updatedAt: string
 }
@@ -25,7 +25,6 @@ function RecentActivityList({ activities, title }: RecentActivityListProps) {
     const diffHours = Math.floor(Math.abs(diffMs) / 3600000)
     const diffDays = Math.floor(Math.abs(diffMs) / 86400000)
 
-    // Handle negative time (future dates or very old dates)
     const prefix = diffMs < 0 ? '-' : ''
 
     if (diffMins < 60) {
@@ -35,7 +34,15 @@ function RecentActivityList({ activities, title }: RecentActivityListProps) {
     } else if (diffDays < 7) {
       return `${prefix}${diffDays} hari lalu`
     } else {
-      return formatWITA(timestamp)
+      return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Makassar',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(time)
     }
   }
 
@@ -68,9 +75,19 @@ function RecentActivityList({ activities, title }: RecentActivityListProps) {
                 <h4 className="text-xs sm:text-sm font-black text-[#0f172a] dark:text-white uppercase tracking-tight mb-1 truncate">
                   {activity.item}
                 </h4>
-                <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest truncate">
-                  {activity.menu}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">
+                    {activity.menu}
+                  </p>
+                  {activity.pic && activity.action === 'keluar' && (
+                    <>
+                      <span className="text-gray-300 dark:text-gray-600">·</span>
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold truncate">
+                        PIC: <span className="font-black text-[#0f172a] dark:text-white">{activity.pic}</span>
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
               <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-bold whitespace-nowrap">
                 {formatTimeAgo(activity.timestamp)}

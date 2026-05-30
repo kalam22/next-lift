@@ -9,6 +9,8 @@ import { validateRequest } from '@/lib/validation-helpers'
 import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Monitor, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -167,6 +169,9 @@ export async function POST(request: NextRequest) {
     // Invalidate cache
     await cache.delete('/api/monitor')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'monitor', entityId: monitor.id, action: 'CREATE', description: `Data Monitor "${validatedData.brand}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return successResponse(monitor, 201)
   } catch (error: unknown) {

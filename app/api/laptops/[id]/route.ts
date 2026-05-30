@@ -7,6 +7,9 @@ import { validateRequest } from '@/lib/validation-helpers'
 import { laptopSchema } from '@/lib/validations/laptops'
 import { handleDbError, safeErrorResponse } from '@/lib/security'
 import { deleteImageFile, deletePdfFile } from '@/lib/fileUtils'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Laptop } from '@/types/entities'
 
 export async function GET(
@@ -98,11 +101,15 @@ export async function PUT(
       suratJalan, catatan, gambar, serahTerimaPdf,
     } = validation.data
 
-    // Get old laptop data to check for file changes
+    // Get old laptop data to check for file changes AND for diff
     const oldLaptop = await prisma.laptops.findUnique({
       where: { id: parseInt(id) },
-      select: { 
-        serah_terima_pdf: true,
+      select: {
+        merk: true, prosesor: true, sn: true, ssd_hdd: true, ram: true,
+        monitor: true, printer: true, keyboard: true, untuk: true, site: true,
+        departemen: true, po: true, status: true, kerusakan: true, catatan: true,
+        surat_jalan: true, unit: true, masuk: true, kirim: true,
+        gambar: true, serah_terima_pdf: true,
       },
     })
 
@@ -162,6 +169,42 @@ export async function PUT(
     await cache.delete('/api/laptops')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+
+    // Build diff description
+    const diffDesc = oldLaptop ? buildDiffDescription([
+      { label: 'Merk', oldValue: oldLaptop.merk, newValue: merk },
+      { label: 'Untuk', oldValue: oldLaptop.untuk, newValue: untuk },
+      { label: 'Unit', oldValue: oldLaptop.unit, newValue: unit },
+      { label: 'Site', oldValue: oldLaptop.site, newValue: site },
+      { label: 'Departemen', oldValue: oldLaptop.departemen, newValue: departemen },
+      { label: 'Status', oldValue: oldLaptop.status, newValue: status },
+      { label: 'Prosesor', oldValue: oldLaptop.prosesor, newValue: prosesor },
+      { label: 'RAM', oldValue: oldLaptop.ram, newValue: ram },
+      { label: 'Storage', oldValue: oldLaptop.ssd_hdd, newValue: ssdHdd },
+      { label: 'SN', oldValue: oldLaptop.sn, newValue: sn },
+      { label: 'Monitor', oldValue: oldLaptop.monitor, newValue: monitor },
+      { label: 'Printer', oldValue: oldLaptop.printer, newValue: printer },
+      { label: 'Keyboard', oldValue: oldLaptop.keyboard, newValue: keyboard },
+      { label: 'Nomor PO', oldValue: oldLaptop.po?.toString(), newValue: po?.toString() },
+      { label: 'Surat Jalan', oldValue: oldLaptop.surat_jalan, newValue: suratJalan },
+      { label: 'Kerusakan', oldValue: oldLaptop.kerusakan, newValue: kerusakan },
+      { label: 'Catatan', oldValue: oldLaptop.catatan, newValue: catatan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(oldLaptop.masuk), newValue: masuk ? formatDateForDiff(new Date(masuk)) : '-' },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(oldLaptop.kirim), newValue: kirim ? formatDateForDiff(new Date(kirim)) : '-' },
+      { label: 'Foto', oldValue: oldLaptop.gambar ? 'Ada' : '-', newValue: gambar ? (gambar !== oldLaptop.gambar ? 'Diperbarui' : 'Ada') : (oldLaptop.gambar ? 'Dihapus' : '-') },
+      { label: 'Serah Terima PDF', oldValue: oldLaptop.serah_terima_pdf ? 'Ada' : '-', newValue: serahTerimaPdf ? (serahTerimaPdf !== oldLaptop.serah_terima_pdf ? 'Diperbarui' : 'Ada') : (oldLaptop.serah_terima_pdf ? 'Dihapus' : '-') },
+    ]) : null
+
+    logActivity({
+      entityType: 'laptop',
+      entityId: parseInt(id),
+      action: 'UPDATE',
+      description: diffDesc ?? `Data Laptop "${merk}" diperbarui`,
+      userId: user?.id,
+      userName: user?.name,
+    })
+
     return NextResponse.json(transformed)
   } catch (error: unknown) {
     logger.error('Error updating laptop:', error)
@@ -199,6 +242,9 @@ export async function DELETE(
     await cache.delete(`/api/laptops/${id}`)
     await cache.delete('/api/laptops')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'laptop', entityId: laptopId, action: 'DELETE', description: 'Data Laptop dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'Laptop deleted successfully' })
   } catch (error: unknown) {

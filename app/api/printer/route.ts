@@ -4,6 +4,8 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Printer, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -220,6 +222,9 @@ export async function POST(request: NextRequest) {
     // Invalidate cache
     await cache.delete('/api/printer')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'printer', entityId: printer.id, action: 'CREATE', description: `Data Printer "${brand}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return NextResponse.json(printer, { status: 201 })
   } catch (error: unknown) {

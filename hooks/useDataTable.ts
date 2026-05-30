@@ -115,7 +115,9 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
 
     if (result.isConfirmed) {
       try {
-        const deletedItem = data.find(item => item.id === id)
+        // Panggil API dulu, baru update UI — mencegah data muncul lagi saat refresh
+        await axios.delete(`${apiEndpoint}/${id}`)
+
         const updatedData = data.filter(item => item.id !== id)
         setData(updatedData)
         setTotalItems(prev => Math.max(prev - 1, 0))
@@ -127,10 +129,8 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
         })
         
         const isLastItemOnPage = updatedData.length === 0 && currentPage > 1
-        
         if (isLastItemOnPage) {
-          const newPage = Math.max(currentPage - 1, 1)
-          setCurrentPage(newPage)
+          setCurrentPage(Math.max(currentPage - 1, 1))
         }
         
         await Swal.fire({
@@ -140,41 +140,10 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
           timer: 1500,
           showConfirmButton: false,
           buttonsStyling: false,
-          customClass: {
-            popup: '!rounded-2xl',
-            title: '!font-bold',
-          },
-        })
-        
-        axios.delete(`${apiEndpoint}/${id}`).catch(error => {
-          logger.error(`Error deleting ${entityName}:`, error)
-          if (deletedItem) {
-            setData([...updatedData, deletedItem].sort((a, b) => {
-              if (sortConfig.key === 'createdAt') {
-                const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
-                const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
-                return sortConfig.direction === 'desc' ? bTime - aTime : aTime - bTime
-              }
-              return 0
-            }))
-            setTotalItems(prev => prev + 1)
-          }
-          Swal.fire({
-            title: 'Gagal!',
-            text: 'Gagal menghapus data. Silakan coba lagi.',
-            icon: 'error',
-            confirmButtonText: 'OK',
-            buttonsStyling: false,
-            customClass: {
-              popup: '!rounded-2xl',
-              title: '!font-bold',
-              confirmButton: 'swal2-confirm',
-            },
-          })
+          customClass: { popup: '!rounded-2xl', title: '!font-bold' },
         })
       } catch (error) {
         logger.error(`Error deleting ${entityName}:`, error)
-        const { default: Swal } = await import('sweetalert2')
         await Swal.fire({
           title: 'Gagal!',
           text: 'Gagal menghapus data. Silakan coba lagi.',

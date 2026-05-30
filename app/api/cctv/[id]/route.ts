@@ -10,6 +10,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { deleteImageFile } from '@/lib/fileUtils'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Cctv } from '@/types/entities'
 
 export async function GET(
@@ -133,6 +136,24 @@ export async function PUT(
     await cache.delete('/api/cctv')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingCctv.brand, newValue: validatedData.brand },
+      { label: 'Site', oldValue: existingCctv.site, newValue: validatedData.site },
+      { label: 'Departemen', oldValue: existingCctv.departemen, newValue: validatedData.departemen },
+      { label: 'Status', oldValue: existingCctv.statusBarang, newValue: validatedData.statusBarang },
+      { label: 'Storage', oldValue: existingCctv.storage, newValue: validatedData.storage },
+      { label: 'Jumlah', oldValue: existingCctv.jumlahOrderan, newValue: validatedData.jumlahOrderan },
+      { label: 'Diperuntukan', oldValue: existingCctv.diperuntukan, newValue: validatedData.diperuntukan },
+      { label: 'Nomor PO', oldValue: existingCctv.nomorPO, newValue: validatedData.nomorPO },
+      { label: 'Surat Jalan', oldValue: existingCctv.nomorSuratJalan, newValue: validatedData.nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingCctv.keterangan, newValue: validatedData.keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingCctv.tanggalMasuk), newValue: formatDateForDiff(new Date(validatedData.tanggalMasuk)) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingCctv.tanggalKirim), newValue: formatDateForDiff(validatedData.tanggalKirim ? new Date(validatedData.tanggalKirim) : null) },
+      { label: 'Foto', oldValue: existingCctv.foto ? 'Ada' : '-', newValue: validatedData.foto ? (validatedData.foto !== existingCctv.foto ? 'Diperbarui' : 'Ada') : (existingCctv.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'cctv', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data CCTV "${validatedData.brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return successResponse(cctv)
   } catch (error: unknown) {
     logger.error('Error updating cctv:', error)
@@ -174,6 +195,9 @@ export async function DELETE(
     await cache.delete(`/api/cctv/${id}`)
     await cache.delete('/api/cctv')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'cctv', entityId: cctvId, action: 'DELETE', description: 'Data CCTV dihapus', userId: user?.id, userName: user?.name })
 
     return successResponse({ message: 'CCTV deleted successfully' })
   } catch (error: unknown) {

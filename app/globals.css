@@ -362,6 +362,12 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* Kecualikan loading spinner — tetap perlu berputar agar user tahu sedang loading */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* Mobile: pastikan tabel tidak overflow tanpa scrollbar */

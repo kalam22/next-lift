@@ -9,6 +9,7 @@ import RecentActivityList from '@/components/RecentActivityList'
 
 // Lazy load chart components untuk mengurangi initial bundle size
 const ComparisonChart = dynamic(() => import('@/components/ComparisonChart'), {
+  ssr: false,
   loading: () => (
     <div className="bg-white dark:bg-[#1e293b] rounded-[2rem] border-2 border-[#e2e8f0] dark:border-[#334155] shadow-lg shadow-gray-200/50 dark:shadow-black/20 p-4 sm:p-6">
       <div className="h-[250px] sm:h-[350px] flex items-center justify-center">
@@ -22,7 +23,6 @@ const ComparisonChart = dynamic(() => import('@/components/ComparisonChart'), {
       </div>
     </div>
   ),
-  ssr: false,
 })
 
 const CategoryDistributionChart = dynamic(() => import('@/components/CategoryDistributionChart'), {
@@ -99,6 +99,7 @@ interface DashboardData {
     action: 'masuk' | 'keluar'
     quantity: number
     site: string
+    pic: string
     timestamp: string
     updatedAt: string
   }>
@@ -239,7 +240,7 @@ export default function DashboardPage() {
               Dashboard Inventory
             </h1>
             <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-              Monitoring Barang Masuk & Keluar
+              Monitoring Aktivitas Barang
             </p>
           </div>
 
@@ -309,27 +310,25 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <SummaryCard
-          title="Total Barang Masuk"
-          value={data.summary.totalMasuk}
-          subtitle={summarySubtitle}
-          trend="up"
-          gradientColor="pink"
-        />
-        <SummaryCard
-          title="Total Barang Keluar"
-          value={data.summary.totalKeluar}
-          subtitle={summarySubtitle}
-          trend="down"
-          gradientColor="orange"
-        />
-        <SummaryCard
-          title="Stok Saat Ini"
-          value={data.summary.stokSaatIni}
-          subtitle="Units tersedia"
-          gradientColor="green"
-        />
+      <div className="flex justify-center gap-4 sm:gap-6">
+        <div className="w-full max-w-sm">
+          <SummaryCard
+            title="Total Barang Masuk"
+            value={data.summary.totalMasuk}
+            subtitle={summarySubtitle}
+            trend="up"
+            gradientColor="pink"
+          />
+        </div>
+        <div className="w-full max-w-sm">
+          <SummaryCard
+            title="Total Barang Keluar"
+            value={data.summary.totalKeluar}
+            subtitle={summarySubtitle}
+            trend="down"
+            gradientColor="orange"
+          />
+        </div>
       </div>
 
       {/* Comparison Charts: Perbandingan Barang Masuk & Keluar and Perbandingan Site */}

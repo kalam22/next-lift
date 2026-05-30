@@ -4,6 +4,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { deleteImageFile } from '@/lib/fileUtils'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { PC } from '@/types/entities'
 
 export async function GET(
@@ -141,9 +144,14 @@ export async function PUT(
       return new Date(utcDate.getTime() - (8 * 60 * 60 * 1000))
     }
 
+    // Ambil data lama untuk diff
+    const oldPc = await prisma.pcs.findUnique({
+      where: { id: parseInt(id) },
+      select: { merk: true, prosesor: true, ssd_hdd: true, ram: true, untuk: true, unit: true, site: true, departemen: true, status: true, masuk: true, kirim: true, po: true, surat_jalan: true, kerusakan: true, catatan: true, gambar: true },
+    })
+
     // Build update data object conditionally
     const updateData: any = {
-      merk,
       prosesor,
       ssd_hdd: ssdHdd ?? '',
       ram: ram ?? '',
@@ -208,11 +216,29 @@ export async function PUT(
       updatedAt: pc.updated_at,
     }
 
+    const user = await getSessionUser(request)
+    const diffDesc = oldPc ? buildDiffDescription([
+      { label: 'Merk', oldValue: oldPc.merk, newValue: merk },
+      { label: 'Untuk', oldValue: oldPc.untuk, newValue: untuk },
+      { label: 'Unit', oldValue: oldPc.unit, newValue: unit },
+      { label: 'Site', oldValue: oldPc.site, newValue: site },
+      { label: 'Departemen', oldValue: oldPc.departemen, newValue: departemen },
+      { label: 'Status', oldValue: oldPc.status, newValue: status },
+      { label: 'Prosesor', oldValue: oldPc.prosesor, newValue: prosesor },
+      { label: 'RAM', oldValue: oldPc.ram, newValue: ram },
+      { label: 'Storage', oldValue: oldPc.ssd_hdd, newValue: ssdHdd },
+      { label: 'Nomor PO', oldValue: oldPc.po?.toString(), newValue: po?.toString() },
+      { label: 'Surat Jalan', oldValue: oldPc.surat_jalan, newValue: suratJalan },
+      { label: 'Kerusakan', oldValue: oldPc.kerusakan, newValue: kerusakan },
+      { label: 'Catatan', oldValue: oldPc.catatan, newValue: catatan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(oldPc.masuk), newValue: masuk ? formatDateForDiff(new Date(masuk)) : '-' },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(oldPc.kirim), newValue: kirim ? formatDateForDiff(new Date(kirim)) : '-' },
+      { label: 'Foto', oldValue: oldPc.gambar ? 'Ada' : '-', newValue: gambar ? (gambar !== oldPc.gambar ? 'Diperbarui' : 'Ada') : (oldPc.gambar ? 'Dihapus' : '-') },
+    ]) : null
+    logActivity({ entityType: 'pc', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data PC "${merk}" diperbarui`, userId: user?.id, userName: user?.name })
     return NextResponse.json(transformed)
   } catch (error) {
     logger.error('Error updating pc:', error)
-    
-    // Check if it's a database connection error
     if (error instanceof Error && (error.name === 'PrismaClientInitializationError' || error.message.includes('Can\'t reach database server'))) {
       return NextResponse.json(
         { 
@@ -258,6 +284,9 @@ export async function DELETE(
     await cache.delete(`/api/pcs/${id}`)
     await cache.delete('/api/pcs')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'pc', entityId: pcId, action: 'DELETE', description: 'Data PC dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'PC deleted successfully' })
   } catch (error: unknown) {

@@ -4,6 +4,8 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { Mouse, ApiResponse } from '@/types/entities'
 
 export async function GET(request: NextRequest) {
@@ -199,6 +201,9 @@ export async function POST(request: NextRequest) {
     // Invalidate dashboard cache and mouse cache when new data is added
     await invalidateDashboardCache()
     await cache.delete('/api/mouse')
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'mouse', entityId: mouse.id, action: 'CREATE', description: `Data Mouse "${brand}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return NextResponse.json(mouse, { status: 201 })
   } catch (error: unknown) {

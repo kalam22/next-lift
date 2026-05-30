@@ -11,14 +11,14 @@ export default function Footer() {
                 <div className="flex flex-col items-center md:items-start gap-1">
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-black text-[#0f172a] dark:text-white tracking-widest uppercase">
-                            IT DEPARTMENT
+                            IT Infrastruktur
                         </span>
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
                             v1.0
                         </span>
                     </div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">
-                        Management System
+                        Inventory System
                     </p>
                 </div>
 

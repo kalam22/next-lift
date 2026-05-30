@@ -22,7 +22,7 @@ export const LIFT_STATUS = {
 export const DEPARTEMEN_OPTIONS = [
   'HRD', 'Plant', 'Logistik', 'GA', 'Payroll', 'HSE',
   'Engineering', 'Finance', 'Purchasing', 'IT',
-  'Management', 'Accounting', 'Pajak', 'Legal', 'Training Center',
+  'Management', 'Accounting', 'Pajak', 'Legal', 'Training Center', 'PJO',
 ] as const
 
 export type Departemen = typeof DEPARTEMEN_OPTIONS[number]

@@ -7,6 +7,9 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { deleteImageFile } from '@/lib/fileUtils'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 import type { Ups } from '@/types/entities'
 
 export async function GET(
@@ -209,6 +212,24 @@ export async function PUT(
     await cache.delete('/api/ups')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    const diffDesc = buildDiffDescription([
+      { label: 'Brand', oldValue: existingUps.brand, newValue: brand },
+      { label: 'Site', oldValue: existingUps.site, newValue: site },
+      { label: 'Departemen', oldValue: existingUps.departemen, newValue: departemen },
+      { label: 'Status', oldValue: existingUps.statusBarang, newValue: statusBarang },
+      { label: 'Daya VA', oldValue: existingUps.dayaVa, newValue: dayaVa },
+      { label: 'Jumlah', oldValue: existingUps.jumlahOrderan, newValue: jumlahOrderan },
+      { label: 'Diperuntukan', oldValue: existingUps.diperuntukan, newValue: diperuntukan },
+      { label: 'Nomor PO', oldValue: existingUps.nomorPO, newValue: nomorPO },
+      { label: 'Surat Jalan', oldValue: existingUps.nomorSuratJalan, newValue: nomorSuratJalan },
+      { label: 'Keterangan', oldValue: existingUps.keterangan, newValue: keterangan },
+      { label: 'Tgl Masuk', oldValue: formatDateForDiff(existingUps.tanggalMasuk), newValue: formatDateForDiff(tanggalMasukDate) },
+      { label: 'Tgl Kirim', oldValue: formatDateForDiff(existingUps.tanggalKirim), newValue: formatDateForDiff(tanggalKirimDate) },
+      { label: 'Foto', oldValue: existingUps.foto ? 'Ada' : '-', newValue: foto ? (foto !== existingUps.foto ? 'Diperbarui' : 'Ada') : (existingUps.foto ? 'Dihapus' : '-') },
+    ])
+    logActivity({ entityType: 'ups', entityId: parseInt(id), action: 'UPDATE', description: diffDesc ?? `Data UPS "${brand}" diperbarui`, userId: user?.id, userName: user?.name })
+
     return NextResponse.json(ups)
   } catch (error: unknown) {
     logger.error('Error updating ups:', error)
@@ -251,9 +272,10 @@ export async function DELETE(
     await cache.delete('/api/ups')
     await invalidateDashboardCache()
 
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'ups', entityId: upsId, action: 'DELETE', description: 'Data UPS dihapus', userId: user?.id, userName: user?.name })
+
     return NextResponse.json({ message: 'UPS deleted successfully' })
-  } catch (error: unknown) {
-    logger.error('Error deleting ups:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       { error: 'Failed to delete ups', message: errorMessage },

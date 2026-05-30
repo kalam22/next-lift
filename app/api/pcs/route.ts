@@ -6,6 +6,8 @@ import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { validateRequest } from '@/lib/validation-helpers'
 import { pcSchema } from '@/lib/validations/pcs'
 import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 import type { PC, ApiResponse } from '@/types/entities'
 
 const convertToUTC8 = (dateString: string): Date | undefined => {
@@ -142,6 +144,9 @@ export async function POST(request: NextRequest) {
 
     await cache.delete('/api/pcs')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({ entityType: 'pc', entityId: pc.id, action: 'CREATE', description: `Data PC "${pc.merk}" ditambahkan`, userId: user?.id, userName: user?.name })
 
     return NextResponse.json({
       id: pc.id, merk: pc.merk, prosesor: pc.prosesor, ssdHdd: pc.ssd_hdd,

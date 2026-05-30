@@ -48,6 +48,10 @@ async function getMonthlyComparison(period: string, month: string | null, year: 
         prisma.printer.count({ where: { tanggalKirim: { gte: yearStart, lte: yearEnd, not: null } } }),
         prisma.toolsJaringan.count({ where: { tanggalMasuk: { gte: yearStart, lte: yearEnd } } }),
         prisma.toolsJaringan.count({ where: { tanggalKirim: { gte: yearStart, lte: yearEnd, not: null } } }),
+        prisma.cctv.count({ where: { tanggalMasuk: { gte: yearStart, lte: yearEnd } } }),
+        prisma.cctv.count({ where: { tanggalKirim: { gte: yearStart, lte: yearEnd, not: null } } }),
+        prisma.storage.count({ where: { tanggalMasuk: { gte: yearStart, lte: yearEnd } } }),
+        prisma.storage.count({ where: { tanggalKirim: { gte: yearStart, lte: yearEnd, not: null } } }),
         prisma.pcs.count({ where: { masuk: { gte: yearStart, lte: yearEnd } } }),
         prisma.pcs.count({ where: { kirim: { gte: yearStart, lte: yearEnd, not: null } } }),
         prisma.laptops.count({ where: { masuk: { gte: yearStart, lte: yearEnd } } }),
@@ -56,8 +60,8 @@ async function getMonthlyComparison(period: string, month: string | null, year: 
 
       months.push({
         month: targetYear.toString(),
-        masuk: counts[0] + counts[2] + counts[4] + counts[6] + counts[8] + counts[10] + counts[12],
-        keluar: counts[1] + counts[3] + counts[5] + counts[7] + counts[9] + counts[11] + counts[13],
+        masuk: counts[0] + counts[2] + counts[4] + counts[6] + counts[8] + counts[10] + counts[12] + counts[14] + counts[16],
+        keluar: counts[1] + counts[3] + counts[5] + counts[7] + counts[9] + counts[11] + counts[13] + counts[15] + counts[17],
       })
     }
     return months
@@ -90,6 +94,10 @@ async function getMonthlyComparison(period: string, month: string | null, year: 
       prisma.printer.count({ where: { tanggalKirim: { gte: monthStart, lte: monthEnd, not: null } } }),
       prisma.toolsJaringan.count({ where: { tanggalMasuk: { gte: monthStart, lte: monthEnd } } }),
       prisma.toolsJaringan.count({ where: { tanggalKirim: { gte: monthStart, lte: monthEnd, not: null } } }),
+      prisma.cctv.count({ where: { tanggalMasuk: { gte: monthStart, lte: monthEnd } } }),
+      prisma.cctv.count({ where: { tanggalKirim: { gte: monthStart, lte: monthEnd, not: null } } }),
+      prisma.storage.count({ where: { tanggalMasuk: { gte: monthStart, lte: monthEnd } } }),
+      prisma.storage.count({ where: { tanggalKirim: { gte: monthStart, lte: monthEnd, not: null } } }),
       prisma.pcs.count({ where: { masuk: { gte: monthStart, lte: monthEnd } } }),
       prisma.pcs.count({ where: { kirim: { gte: monthStart, lte: monthEnd, not: null } } }),
       prisma.laptops.count({ where: { masuk: { gte: monthStart, lte: monthEnd } } }),
@@ -98,30 +106,34 @@ async function getMonthlyComparison(period: string, month: string | null, year: 
 
     months.push({
       month: monthStart.toLocaleDateString('id-ID', { month: 'short' }),
-      masuk: counts[0] + counts[2] + counts[4] + counts[6] + counts[8] + counts[10] + counts[12],
-      keluar: counts[1] + counts[3] + counts[5] + counts[7] + counts[9] + counts[11] + counts[13],
+      masuk: counts[0] + counts[2] + counts[4] + counts[6] + counts[8] + counts[10] + counts[12] + counts[14] + counts[16],
+      keluar: counts[1] + counts[3] + counts[5] + counts[7] + counts[9] + counts[11] + counts[13] + counts[15] + counts[17],
     })
   }
   return months
 }
 
 async function getCategoryDistribution() {
-  const [mouse, monitor, ups, printer, toolsJaringan, pcs, laptops] = await Promise.all([
+  const [mouse, monitor, ups, printer, toolsJaringan, cctv, storage, pcs, laptops] = await Promise.all([
     prisma.mouse.count(),
     prisma.monitor.count(),
     prisma.ups.count(),
     prisma.printer.count(),
     prisma.toolsJaringan.count(),
+    prisma.cctv.count(),
+    prisma.storage.count(),
     prisma.pcs.count(),
     prisma.laptops.count(),
   ])
-  const total = mouse + monitor + ups + printer + toolsJaringan + pcs + laptops
+  const total = mouse + monitor + ups + printer + toolsJaringan + cctv + storage + pcs + laptops
   return [
     { name: 'Mouse', value: mouse, percentage: total > 0 ? Math.round((mouse / total) * 100) : 0 },
     { name: 'Monitor', value: monitor, percentage: total > 0 ? Math.round((monitor / total) * 100) : 0 },
     { name: 'UPS', value: ups, percentage: total > 0 ? Math.round((ups / total) * 100) : 0 },
     { name: 'Printer', value: printer, percentage: total > 0 ? Math.round((printer / total) * 100) : 0 },
     { name: 'Tools Jaringan', value: toolsJaringan, percentage: total > 0 ? Math.round((toolsJaringan / total) * 100) : 0 },
+    { name: 'CCTV', value: cctv, percentage: total > 0 ? Math.round((cctv / total) * 100) : 0 },
+    { name: 'Storage', value: storage, percentage: total > 0 ? Math.round((storage / total) * 100) : 0 },
     { name: 'PCs', value: pcs, percentage: total > 0 ? Math.round((pcs / total) * 100) : 0 },
     { name: 'Laptops', value: laptops, percentage: total > 0 ? Math.round((laptops / total) * 100) : 0 },
   ].filter(item => item.value > 0)
@@ -134,35 +146,35 @@ async function getRecentActivity() {
   const processStandard = async (model: any, menuName: string, quantityField: string) => {
     const [masukItems, keluarItems] = await Promise.all([
       model.findMany({
-        select: { id: true, brand: true, [quantityField]: true, tanggalMasuk: true, site: true },
+        select: { id: true, brand: true, [quantityField]: true, tanggalMasuk: true, site: true, diperuntukan: true },
         orderBy: { tanggalMasuk: 'desc' },
         take: limit,
       }),
       model.findMany({
-        select: { id: true, brand: true, [quantityField]: true, tanggalKirim: true, site: true },
+        select: { id: true, brand: true, [quantityField]: true, tanggalKirim: true, site: true, diperuntukan: true },
         where: { tanggalKirim: { not: null } },
         orderBy: { tanggalKirim: 'desc' },
         take: limit,
       }),
     ])
     masukItems.forEach((item: any) => {
-      if (item.tanggalMasuk) activities.push({ menu: menuName, item: item.brand, action: 'masuk', quantity: item[quantityField], site: item.site || '', timestamp: item.tanggalMasuk.toISOString(), updatedAt: item.tanggalMasuk.toISOString() })
+      if (item.tanggalMasuk) activities.push({ menu: menuName, item: item.brand, action: 'masuk', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.tanggalMasuk.toISOString(), updatedAt: item.tanggalMasuk.toISOString() })
     })
     keluarItems.forEach((item: any) => {
-      if (item.tanggalKirim) activities.push({ menu: menuName, item: item.brand, action: 'keluar', quantity: item[quantityField], site: item.site || '', timestamp: item.tanggalKirim.toISOString(), updatedAt: item.tanggalKirim.toISOString() })
+      if (item.tanggalKirim) activities.push({ menu: menuName, item: item.brand, action: 'keluar', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.tanggalKirim.toISOString(), updatedAt: item.tanggalKirim.toISOString() })
     })
   }
 
   const processPC = async (model: any, menuName: string) => {
     const [masukItems, keluarItems] = await Promise.all([
-      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true }, orderBy: { masuk: 'desc' }, take: limit }),
-      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true, untuk: true }, orderBy: { masuk: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true, untuk: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
     ])
     masukItems.forEach((item: any) => {
-      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', timestamp: item.masuk.toISOString(), updatedAt: item.masuk.toISOString() })
+      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.masuk.toISOString(), updatedAt: item.masuk.toISOString() })
     })
     keluarItems.forEach((item: any) => {
-      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', timestamp: item.kirim.toISOString(), updatedAt: item.kirim.toISOString() })
+      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.kirim.toISOString(), updatedAt: item.kirim.toISOString() })
     })
   }
 
@@ -172,6 +184,8 @@ async function getRecentActivity() {
     processStandard(prisma.ups, 'UPS', 'jumlahOrderan'),
     processStandard(prisma.printer, 'Printer', 'jumlah'),
     processStandard(prisma.toolsJaringan, 'Tools Jaringan', 'jumlahOrderan'),
+    processStandard(prisma.cctv, 'CCTV', 'jumlahOrderan'),
+    processStandard(prisma.storage, 'Storage', 'jumlahOrderan'),
     processPC(prisma.pcs, 'PCs'),
     processPC(prisma.laptops, 'Laptops'),
   ])
@@ -219,6 +233,8 @@ async function getSiteComparison(startDate: Date, endDate: Date) {
     processStandard(prisma.ups),
     processStandard(prisma.printer),
     processStandard(prisma.toolsJaringan),
+    processStandard(prisma.cctv),
+    processStandard(prisma.storage),
     processPC(prisma.pcs),
     processPC(prisma.laptops),
   ])
@@ -229,18 +245,20 @@ async function getSiteComparison(startDate: Date, endDate: Date) {
 }
 
 async function getSiteDistribution() {
-  const [mouseData, monitorData, upsData, printerData, toolsData, pcsData, laptopsData] = await Promise.all([
+  const [mouseData, monitorData, upsData, printerData, toolsData, cctvData, storageData, pcsData, laptopsData] = await Promise.all([
     prisma.mouse.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.monitor.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.ups.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.printer.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.toolsJaringan.groupBy({ by: ['site'], _count: { id: true } }),
+    prisma.cctv.groupBy({ by: ['site'], _count: { id: true } }),
+    prisma.storage.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.pcs.groupBy({ by: ['site'], _count: { id: true } }),
     prisma.laptops.groupBy({ by: ['site'], _count: { id: true } }),
   ])
 
   const siteMap = new Map<string, number>()
-  ;[mouseData, monitorData, upsData, printerData, toolsData, pcsData, laptopsData].forEach(data => {
+  ;[mouseData, monitorData, upsData, printerData, toolsData, cctvData, storageData, pcsData, laptopsData].forEach(data => {
     data.forEach((item: any) => siteMap.set(item.site, (siteMap.get(item.site) || 0) + item._count.id))
   })
 
@@ -292,7 +310,7 @@ export async function GET(request: NextRequest) {
     // All top-level queries run in parallel
     const [
       mouseStats, monitorStats, upsStats, printerStats,
-      toolsJaringanStats, pcsStats, laptopsStats,
+      toolsJaringanStats, cctvStats, storageStats, pcsStats, laptopsStats,
       monthlyComparison, categoryDistribution,
       recentActivity, siteComparison, siteDistribution,
     ] = await Promise.all([
@@ -301,6 +319,8 @@ export async function GET(request: NextRequest) {
       getStandardStats(prisma.ups, startDate, endDate),
       getStandardStats(prisma.printer, startDate, endDate),
       getStandardStats(prisma.toolsJaringan, startDate, endDate),
+      getStandardStats(prisma.cctv, startDate, endDate),
+      getStandardStats(prisma.storage, startDate, endDate),
       getPCStats(prisma.pcs, startDate, endDate),
       getPCStats(prisma.laptops, startDate, endDate),
       getMonthlyComparison(period, month, year, now),
@@ -311,14 +331,15 @@ export async function GET(request: NextRequest) {
     ])
 
     const summary = {
-      totalMasuk: mouseStats.masuk + monitorStats.masuk + upsStats.masuk + printerStats.masuk + toolsJaringanStats.masuk + pcsStats.masuk + laptopsStats.masuk,
-      totalKeluar: mouseStats.keluar + monitorStats.keluar + upsStats.keluar + printerStats.keluar + toolsJaringanStats.keluar + pcsStats.keluar + laptopsStats.keluar,
-      stokSaatIni: mouseStats.stok + monitorStats.stok + upsStats.stok + printerStats.stok + toolsJaringanStats.stok + pcsStats.stok + laptopsStats.stok,
+      totalMasuk: mouseStats.masuk + monitorStats.masuk + upsStats.masuk + printerStats.masuk + toolsJaringanStats.masuk + cctvStats.masuk + storageStats.masuk + pcsStats.masuk + laptopsStats.masuk,
+      totalKeluar: mouseStats.keluar + monitorStats.keluar + upsStats.keluar + printerStats.keluar + toolsJaringanStats.keluar + cctvStats.keluar + storageStats.keluar + pcsStats.keluar + laptopsStats.keluar,
+      stokSaatIni: mouseStats.stok + monitorStats.stok + upsStats.stok + printerStats.stok + toolsJaringanStats.stok + cctvStats.stok + storageStats.stok + pcsStats.stok + laptopsStats.stok,
     }
 
     const perMenu = {
       mouse: mouseStats, monitor: monitorStats, ups: upsStats,
       printer: printerStats, toolsJaringan: toolsJaringanStats,
+      cctv: cctvStats, storage: storageStats,
       pcs: pcsStats, laptops: laptopsStats,
     }
 

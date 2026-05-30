@@ -1,9 +1,12 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
-import Link from 'next/link'
 import React from 'react'
 import { ThemeProvider } from "@/components/theme-provider"
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { WebVitals } from '@/components/WebVitals'
+import AuthProvider from '@/components/AuthProvider'
+import ConditionalLayout from '@/components/ConditionalLayout'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -17,10 +20,6 @@ export const metadata: Metadata = {
   title: 'GPE - Management IT',
   description: 'Aplikasi manajemen & inventory IT',
 }
-
-import ClientLayout from '@/components/ClientLayout'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { WebVitals } from '@/components/WebVitals'
 
 export default function RootLayout({
   children,
@@ -37,14 +36,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ErrorBoundary>
-            <WebVitals />
-            <ClientLayout>
-              <main id="main-content">
-                {children}
-              </main>
-            </ClientLayout>
-          </ErrorBoundary>
+          <AuthProvider>
+            <ErrorBoundary>
+              <WebVitals />
+              <ConditionalLayout>
+                <main id="main-content">
+                  {children}
+                </main>
+              </ConditionalLayout>
+            </ErrorBoundary>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -4,6 +4,8 @@ import { logger } from '@/lib/logger'
 import { cache } from '@/lib/cache'
 import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { handleDbError } from '@/lib/security'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 
 export async function GET(request: NextRequest) {
   try {
@@ -139,6 +141,16 @@ export async function POST(request: NextRequest) {
 
     await cache.delete('/api/stock-move')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({
+      entityType: 'stock_move',
+      entityId: transaction.id,
+      action: 'CREATE',
+      description: `${partType} ${namaBarang} (${typeBarang}) — ${quality > 0 ? '+' : ''}${quality} unit${vendorTujuan ? ` · ${vendorTujuan}` : ''}`,
+      userId: user?.id,
+      userName: user?.name,
+    })
 
     return NextResponse.json(transaction, { status: 201 })
   } catch (error: unknown) {
