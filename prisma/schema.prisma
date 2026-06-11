@@ -389,12 +389,15 @@ model User {
   password     String           @db.VarChar(255)
   role         String           @default("user") @db.VarChar(50)
   isActive     Boolean          @default(true) @map("is_active")
+  lastLoginAt  DateTime?        @map("last_login_at")
+  lastActiveAt DateTime?        @map("last_active_at")
   createdAt    DateTime         @default(now()) @map("created_at")
   updatedAt    DateTime         @updatedAt @map("updated_at")
   permissions  UserPermission[]
   activityLogs ActivityLog[]
 
   @@index([username], map: "idx_users_username")
+  @@index([lastActiveAt], map: "idx_users_last_active_at")
   @@map("users")
 }
 
@@ -431,3 +434,20 @@ model ActivityLog {
   @@index([entityType, entityId, createdAt], map: "idx_activity_log_entity_time")
   @@map("activity_logs")
 }
+
+model Handover {
+  id           Int      @id @default(autoincrement())
+  tanggal      DateTime
+  barang       String   @db.Text
+  pic          String   @db.VarChar(191)
+  site         String   @db.VarChar(191)
+  namaPenerima String   @map("nama_penerima") @db.VarChar(191)
+  ttd          String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([tanggal], map: "idx_handover_tanggal")
+  @@index([pic], map: "idx_handover_pic")
+  @@map("handovers")
+}
+

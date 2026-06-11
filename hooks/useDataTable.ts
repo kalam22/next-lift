@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { logger } from '@/lib/logger'
+import { extractErrorMessage } from '@/lib/inventory/utils'
+import { 
+  DEBOUNCE_DELAY_MS,
+  SWAL_CONFIRM_DELETE_CONFIG,
+  SWAL_SUCCESS_CONFIG,
+  SWAL_ERROR_CONFIG,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES
+} from '@/lib/inventory/constants'
 
 export interface UseDataTableConfig<T> {
   apiEndpoint: string
@@ -43,7 +52,7 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
-    }, 300)
+    }, DEBOUNCE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
@@ -69,6 +78,7 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
     } catch (error: unknown) {
       logger.error(`Error fetching ${entityNamePlural}:`, error)
       setData([])
+      
       const axiosError = error && typeof error === 'object' && 'response' in error
         ? error as { response?: { status?: number; data?: { error?: string } } }
         : null
@@ -76,7 +86,7 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
       if (axiosError?.response?.status === 503 || axiosError?.response?.data?.error === 'Database connection failed') {
         setError('Tidak dapat terhubung ke database. Pastikan PostgreSQL server berjalan di localhost:5432')
       } else {
-        setError('Gagal memuat data. Silakan coba lagi.')
+        setError(extractErrorMessage(error) || ERROR_MESSAGES.fetchFailed)
       }
     } finally {
       setLoading(false)
@@ -97,20 +107,9 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
     const { default: Swal } = await import('sweetalert2')
     
     const result = await Swal.fire({
+      ...SWAL_CONFIRM_DELETE_CONFIG,
       title: 'Apakah Anda yakin?',
       text: 'Data yang dihapus tidak dapat dikembalikan!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Hapus!',
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      buttonsStyling: false,
-      customClass: {
-        popup: '!rounded-2xl',
-        title: '!font-bold',
-        confirmButton: 'swal2-confirm',
-        cancelButton: 'swal2-cancel',
-      },
     })
 
     if (result.isConfirmed) {
@@ -134,27 +133,17 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
         }
         
         await Swal.fire({
+          ...SWAL_SUCCESS_CONFIG,
           title: 'Terhapus!',
-          text: 'Data berhasil dihapus.',
-          icon: 'success',
+          text: SUCCESS_MESSAGES.deleted,
           timer: 1500,
-          showConfirmButton: false,
-          buttonsStyling: false,
-          customClass: { popup: '!rounded-2xl', title: '!font-bold' },
         })
       } catch (error) {
         logger.error(`Error deleting ${entityName}:`, error)
         await Swal.fire({
+          ...SWAL_ERROR_CONFIG,
           title: 'Gagal!',
-          text: 'Gagal menghapus data. Silakan coba lagi.',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          buttonsStyling: false,
-          customClass: {
-            popup: '!rounded-2xl',
-            title: '!font-bold',
-            confirmButton: 'swal2-confirm',
-          },
+          text: extractErrorMessage(error) || ERROR_MESSAGES.deleteFailed,
         })
       }
     }
@@ -211,20 +200,10 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
 
     const { default: Swal } = await import('sweetalert2')
     const result = await Swal.fire({
+      ...SWAL_CONFIRM_DELETE_CONFIG,
       title: 'Apakah Anda yakin?',
       text: `Anda akan menghapus ${selectedItems.size} data ${entityNamePlural}. Tindakan ini tidak dapat dibatalkan!`,
-      icon: 'warning',
-      showCancelButton: true,
       confirmButtonText: `Ya, Hapus ${selectedItems.size} Data!`,
-      cancelButtonText: 'Batal',
-      reverseButtons: true,
-      buttonsStyling: false,
-      customClass: {
-        popup: '!rounded-2xl',
-        title: '!font-bold',
-        confirmButton: 'swal2-confirm',
-        cancelButton: 'swal2-cancel',
-      },
     })
 
     if (result.isConfirmed) {
@@ -250,16 +229,9 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
 
         if (errorCount === 0) {
           await Swal.fire({
+            ...SWAL_SUCCESS_CONFIG,
             title: 'Berhasil!',
             text: `Berhasil menghapus ${successCount} data ${entityNamePlural}`,
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false,
-            buttonsStyling: false,
-            customClass: {
-              popup: '!rounded-2xl',
-              title: '!font-bold',
-            },
           })
         } else {
           await Swal.fire({
@@ -279,16 +251,9 @@ export function useDataTable<T extends { id: number; createdAt?: Date | string }
         logger.error('Error in bulk delete:', error)
         const { default: Swal } = await import('sweetalert2')
         await Swal.fire({
+          ...SWAL_ERROR_CONFIG,
           title: 'Gagal!',
-          text: 'Gagal menghapus data. Silakan coba lagi.',
-          icon: 'error',
-          confirmButtonText: 'OK',
-          buttonsStyling: false,
-          customClass: {
-            popup: '!rounded-2xl',
-            title: '!font-bold',
-            confirmButton: 'swal2-confirm',
-          },
+          text: extractErrorMessage(error) || ERROR_MESSAGES.deleteFailed,
         })
       }
     }

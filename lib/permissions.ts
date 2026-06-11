@@ -23,6 +23,7 @@ export const MENU_KEYS = {
   CCTV:           'cctv',
   STORAGE:        'storage',
   STOCK_MOVE:     'stock_move',
+  HANDOVER:       'handover',
 } as const
 
 /** Available permissions per menu — defines the permission matrix. */
@@ -39,6 +40,7 @@ export const MENU_PERMISSIONS: Record<string, PermissionType[]> = {
   cctv:           ['view', 'create', 'edit', 'delete', 'export'],
   storage:        ['view', 'create', 'edit', 'delete', 'export'],
   stock_move:     ['view', 'create', 'edit', 'delete', 'export'],
+  handover:       ['view', 'create', 'edit', 'delete', 'export'],
 }
 
 /** Maps URL pathnames to their corresponding menu key. */
@@ -55,6 +57,7 @@ export const PATH_TO_MENU: Record<string, string> = {
   '/cctv':           'cctv',
   '/storage':        'storage',
   '/stock-move':     'stock_move',
+  '/serah-terima':   'handover',
 }
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────

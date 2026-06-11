@@ -6,7 +6,7 @@ import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { handleDbError } from '@/lib/security'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
-import { buildDiffDescription } from '@/lib/diff-fields'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
 
 export async function PUT(
   request: NextRequest,
@@ -44,13 +44,15 @@ export async function PUT(
     await invalidateDashboardCache()
 
     const user = await getSessionUser(request)
-    const oldTx = await (prisma as any).stockTransaction.findUnique({ where: { id: parseInt(id) }, select: { partType: true, namaBarang: true, typeBarang: true, quality: true, vendorTujuan: true } }).catch(() => null)
+    const oldTx = await (prisma as any).stockTransaction.findUnique({ where: { id: parseInt(id) }, select: { partType: true, tanggal: true, namaBarang: true, typeBarang: true, quality: true, vendorTujuan: true, keterangan: true } }).catch(() => null)
     const diffDesc = oldTx ? buildDiffDescription([
       { label: 'Tipe', oldValue: oldTx.partType, newValue: partType },
+      { label: 'Tanggal', oldValue: formatDateForDiff(oldTx.tanggal), newValue: formatDateForDiff(new Date(tanggal)) },
       { label: 'Nama', oldValue: oldTx.namaBarang, newValue: namaBarang },
       { label: 'Type', oldValue: oldTx.typeBarang, newValue: typeBarang },
       { label: 'Qty', oldValue: oldTx.quality, newValue: quality },
       { label: 'Vendor', oldValue: oldTx.vendorTujuan, newValue: vendorTujuan },
+      { label: 'Keterangan', oldValue: oldTx.keterangan, newValue: keterangan },
     ]) : null
     logActivity({
       entityType: 'stock_move',

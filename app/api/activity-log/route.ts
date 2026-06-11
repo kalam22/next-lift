@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActivityLogs } from '@/lib/activity-log'
 import { handleDbError } from '@/lib/security'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {

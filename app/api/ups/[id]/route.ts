@@ -276,6 +276,8 @@ export async function DELETE(
     logActivity({ entityType: 'ups', entityId: upsId, action: 'DELETE', description: 'Data UPS dihapus', userId: user?.id, userName: user?.name })
 
     return NextResponse.json({ message: 'UPS deleted successfully' })
+  } catch (error: unknown) {
+    logger.error('Error deleting ups:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       { error: 'Failed to delete ups', message: errorMessage },

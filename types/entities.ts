@@ -446,3 +446,25 @@ export interface PcHistory {
   createdAt: Date | string
   updatedAt: Date | string
 }
+
+export interface Handover {
+  id: number
+  tanggal: Date | string
+  barang: string
+  pic: string
+  site: string
+  namaPenerima: string
+  ttd?: string | null
+  createdAt: Date | string
+  updatedAt: Date | string
+}
+
+export interface HandoverFormData {
+  tanggal: string
+  barang: string
+  pic: string
+  site: string
+  namaPenerima: string
+  ttd?: string
+}
+

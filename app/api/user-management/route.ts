@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
         username: true,
         role: true,
         isActive: true,
+        lastLoginAt: true,
+        lastActiveAt: true,
         createdAt: true,
         _count: { select: { permissions: true } },
       },

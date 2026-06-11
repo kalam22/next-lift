@@ -22,6 +22,7 @@ import {
     Users,
     UserCircle,
     LogOut,
+    ClipboardList,
 } from 'lucide-react'
 
 import {
@@ -161,6 +162,13 @@ export default function AppSidebar() {
             icon: ArrowLeftRight,
             color: 'text-primary',
             menuKey: 'stock_move',
+        },
+        {
+            name: 'Serah Terima',
+            href: '/serah-terima',
+            icon: ClipboardList,
+            color: 'text-primary',
+            menuKey: 'handover',
         },
     ]
 

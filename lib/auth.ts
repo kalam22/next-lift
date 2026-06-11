@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         // Initial sign-in: populate token from user object
         token.id = user.id
@@ -63,6 +63,19 @@ export const authOptions: NextAuthOptions = {
           token.permissions = buildPermissionsMap(rows)
         } catch {
           token.permissions = {}
+        }
+
+        // Record login time + active time on initial sign-in
+        try {
+          await (prisma as any).user.update({
+            where: { id: Number(user.id) },
+            data: {
+              lastLoginAt: new Date(),
+              lastActiveAt: new Date(),
+            },
+          })
+        } catch {
+          // Silently fail — tracking is non-critical
         }
       } else {
         // Subsequent requests: re-check isActive and permissions from DB
@@ -81,6 +94,22 @@ export const authOptions: NextAuthOptions = {
           token.permissions = buildPermissionsMap(rows)
         } catch {
           // If DB check fails, keep existing values
+        }
+
+        // Update lastActiveAt on every request (token refresh)
+        // Throttled: only update if last update was > 60 seconds ago
+        try {
+          const now = new Date()
+          const lastActive = token.lastActiveAt as string | undefined
+          if (!lastActive || now.getTime() - new Date(lastActive).getTime() > 60_000) {
+            await (prisma as any).user.update({
+              where: { id: Number(token.id) },
+              data: { lastActiveAt: now },
+            })
+            token.lastActiveAt = now.toISOString()
+          }
+        } catch {
+          // Silently fail
         }
       }
       return token
@@ -102,7 +131,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 2 * 60 * 60, // 2 hours
   },
   secret: process.env.NEXTAUTH_SECRET,
 }
