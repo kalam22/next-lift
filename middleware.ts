@@ -34,7 +34,7 @@ function checkRateLimit(key: string): boolean {
 
 // ─── Public routes (no auth required) ────────────────────────────────────────
 
-const PUBLIC_PATHS = ['/login', '/api/auth']
+const PUBLIC_PATHS = ['/login', '/api/auth', '/uploads']
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
@@ -206,5 +206,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)', '/api/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|uploads).*)', '/api/:path*'],
 }
