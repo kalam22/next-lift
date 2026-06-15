@@ -32,6 +32,7 @@ services:
       NEXT_PUBLIC_APP_URL: "http://localhost:5001"
     volumes:
       - ./init.sql:/app/init.sql:ro
+      - uploads:/app/public/uploads
 
   # ===== Nginx reverse proxy for HTTPS + domain =====
   nginx:
@@ -59,3 +60,4 @@ services:
 volumes:
   pgdata:
   certbot-data:
+  uploads:
