@@ -81,6 +81,8 @@ interface DashboardData {
     totalMasuk: number
     totalKeluar: number
     stokSaatIni: number
+    totalStockMove: number
+    totalSerahTerima: number
   }
   perMenu: {
     mouse: { masuk: number; keluar: number; stok: number }
@@ -165,13 +167,13 @@ export default function DashboardPage() {
       setLoading(true)
       const params = new URLSearchParams()
       params.append('period', period)
-      
+
       if (period === 'monthly' && selectedMonth) {
         params.append('month', selectedMonth)
       } else if (period === 'yearly') {
         params.append('year', selectedYear.toString())
       }
-      
+
       const response = await axios.get(`/api/dashboard?${params.toString()}`)
       setData(response.data)
       setError(null)
@@ -249,22 +251,20 @@ export default function DashboardPage() {
             <button
               aria-pressed={period === 'monthly'}
               onClick={() => setPeriod('monthly')}
-              className={`px-4 py-2 sm:px-6 sm:py-3 min-h-[44px] rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${
-                period === 'monthly'
+              className={`px-4 py-2 sm:px-6 sm:py-3 min-h-[44px] rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${period === 'monthly'
                   ? 'bg-primary text-white shadow-lg shadow-primary/20'
                   : 'bg-white dark:bg-[#1e293b] border-2 border-[#e2e8f0] dark:border-[#334155] text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 shadow-md'
-              }`}
+                }`}
             >
               Bulanan
             </button>
             <button
               aria-pressed={period === 'yearly'}
               onClick={() => setPeriod('yearly')}
-              className={`px-4 py-2 sm:px-6 sm:py-3 min-h-[44px] rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${
-                period === 'yearly'
+              className={`px-4 py-2 sm:px-6 sm:py-3 min-h-[44px] rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${period === 'yearly'
                   ? 'bg-primary text-white shadow-lg shadow-primary/20'
                   : 'bg-white dark:bg-[#1e293b] border-2 border-[#e2e8f0] dark:border-[#334155] text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 shadow-md'
-              }`}
+                }`}
             >
               Tahunan
             </button>
@@ -312,7 +312,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
         <SummaryCard
           title="Total Barang Masuk"
           value={data.summary.totalMasuk}
@@ -326,6 +326,20 @@ export default function DashboardPage() {
           subtitle={summarySubtitle}
           trend="down"
           gradientColor="orange"
+        />
+        <SummaryCard
+          title="Total Stock Move"
+          value={data.summary.totalStockMove}
+          subtitle="Semua Stock Move"
+          trend="up"
+          gradientColor="orange"
+        />
+        <SummaryCard
+          title="Total Serah Terima"
+          value={data.summary.totalSerahTerima}
+          subtitle="Semua dokumen"
+          trend="up"
+          gradientColor="pink"
         />
       </div>
 

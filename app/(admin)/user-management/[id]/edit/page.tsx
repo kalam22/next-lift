@@ -6,7 +6,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { ArrowLeft, Save, Key } from 'lucide-react'
-import { MENU_PERMISSIONS, isSuperAdminRole } from '@/lib/permissions'
+import { MENU_PERMISSIONS, isSuperAdminRole } from '@/lib/security/permissions'
 
 interface UserDetail {
   id: number

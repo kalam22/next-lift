@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
-import { handleDbError } from '@/lib/security'
+import { handleDbError } from '@/lib/security/security'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest) {
       search: search || '',
       typeBarang: filterType || '',
     })
-
     const cached = await cache.get(cacheKey)
     if (cached) {
       return NextResponse.json(cached, {

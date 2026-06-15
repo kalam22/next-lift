@@ -135,7 +135,7 @@ function LiftTableRow({
       {showColumns.status && (
         <td className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
           <div className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-full ring-1 ring-inset ${statusStyles}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${dotStyles}`}></div>
+            <div aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${dotStyles}`}></div>
             <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
               {isExpired ? 'EXPIRED' : isExpiringSoon ? 'SOON' : 'ACTIVE'}
             </span>

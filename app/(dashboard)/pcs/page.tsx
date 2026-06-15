@@ -7,11 +7,15 @@ import { useDataTable } from '@/hooks/useDataTable'
 import { useExcelImport } from '@/hooks/useExcelImport'
 import { useExcelExport } from '@/hooks/useExcelExport'
 import { usePermissions } from '@/hooks/usePermissions'
-import { PC_HEADER_MAP, PC_LAPTOP_VALIDATOR, PC_LAPTOP_REQUIRED_FIELDS } from '@/lib/excel-header-maps'
+import { PC_HEADER_MAP, PC_LAPTOP_VALIDATOR, PC_LAPTOP_REQUIRED_FIELDS } from '@/lib/excel/header-maps'
+import { safeOpenUrl } from '@/lib/utils/url'
+import PCForm from '@/components/PCForm'
+import CreateModal from '@/components/CreateModal'
 import type { PC } from '@/types/entities'
 
 export default function PCsPage() {
   const { canCreate, canEdit, canDelete, canExport, canImport } = usePermissions('pcs')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
   const {
     data: pcs,
@@ -124,13 +128,13 @@ export default function PCsPage() {
           </button>
           )}
           {canCreate && (
-          <Link
-            href="/pcs/create"
+          <button
+            onClick={() => setIsCreateOpen(true)}
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-primary hover:bg-primary/90 shadow-primary/25 text-[10px] sm:text-[11px]"
           >
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Register Unit</span>
-          </Link>
+          </button>
           )}
         </div>
       </div>
@@ -335,7 +339,7 @@ export default function PCsPage() {
                                 className="object-cover rounded-xl border border-[#f1f5f9] dark:border-[#334155] cursor-pointer hover:scale-110 transition-transform"
                                 onClick={() => {
                                   if (pc.gambar) {
-                                    window.open(pc.gambar, '_blank')
+                                    safeOpenUrl(pc.gambar)
                                   }
                                 }}
                                 loading="lazy"
@@ -452,6 +456,18 @@ export default function PCsPage() {
           </div>
         </div>
       </div>
+
+      <CreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Register PC Unit"
+        subtitle="Tambah data unit PC baru"
+      >
+        <PCForm
+          onSuccess={() => { setIsCreateOpen(false); fetchData() }}
+          onCancel={() => setIsCreateOpen(false)}
+        />
+      </CreateModal>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { logger } from './logger'
+import { logger } from '@/lib/logger'
 
 /**
  * Delete image file from uploads directory

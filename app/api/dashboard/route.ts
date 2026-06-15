@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { dashboardCacheMultiLayer, cache } from '@/lib/cache'
-import { handleDbError } from '@/lib/security'
+import { handleDbError } from '@/lib/security/security'
+import { cache, invalidateDashboardCache, dashboardCacheMultiLayer } from '@/lib/cache'
 
 // Force dynamic rendering since we use searchParams
 export const dynamic = 'force-dynamic'
@@ -330,10 +330,17 @@ export async function GET(request: NextRequest) {
       getSiteDistribution(),
     ])
 
+    const [totalStockMove, totalSerahTerima] = await Promise.all([
+      prisma.stockTransaction.count(),
+      prisma.handover.count(),
+    ])
+
     const summary = {
       totalMasuk: mouseStats.masuk + monitorStats.masuk + upsStats.masuk + printerStats.masuk + toolsJaringanStats.masuk + cctvStats.masuk + storageStats.masuk + pcsStats.masuk + laptopsStats.masuk,
       totalKeluar: mouseStats.keluar + monitorStats.keluar + upsStats.keluar + printerStats.keluar + toolsJaringanStats.keluar + cctvStats.keluar + storageStats.keluar + pcsStats.keluar + laptopsStats.keluar,
       stokSaatIni: mouseStats.stok + monitorStats.stok + upsStats.stok + printerStats.stok + toolsJaringanStats.stok + cctvStats.stok + storageStats.stok + pcsStats.stok + laptopsStats.stok,
+      totalStockMove,
+      totalSerahTerima,
     }
 
     const perMenu = {

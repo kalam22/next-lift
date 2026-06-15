@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { handleDbError } from '@/lib/security'
+import { prisma } from '@/lib/db/prisma'
+import { handleDbError } from '@/lib/security/security'
 
 // GET /api/pcs/navigation?id=123
 // Returns { prevId, nextId, currentIndex, total }

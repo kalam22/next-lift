@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import ExcelJS from 'exceljs'
 import { format } from 'date-fns'
 import { logger } from '@/lib/logger'

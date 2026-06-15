@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger'
 import { FormField, FormInput, FormSelect, FormTextarea } from '@/components/FormField'
 import { DEPARTEMEN_OPTIONS } from '@/lib/constants'
 import { useImageUpload } from '@/hooks/useImageUpload'
-import { validatePDF, formatFileSize } from '@/lib/pdfCompression'
+import { validatePDF, formatFileSize } from '@/lib/utils/pdf-compression'
 
 interface LaptopFormData {
     merk: string
@@ -40,9 +40,10 @@ interface LaptopFormProps {
     isEdit?: boolean
     laptopId?: string
     onSuccess?: () => void
+    onCancel?: () => void
 }
 
-export default function LaptopForm({ initialData, isEdit = false, laptopId, onSuccess }: LaptopFormProps) {
+export default function LaptopForm({ initialData, isEdit = false, laptopId, onSuccess, onCancel }: LaptopFormProps) {
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const pdfInputRef = useRef<HTMLInputElement>(null)
@@ -197,7 +198,8 @@ export default function LaptopForm({ initialData, isEdit = false, laptopId, onSu
                 logger.error('Error deleting image on cancel:', error)
             }
         }
-        router.back()
+        if (onCancel) onCancel()
+        else router.back()
     }
 
     const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

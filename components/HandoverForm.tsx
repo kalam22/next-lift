@@ -25,9 +25,10 @@ interface HandoverFormProps {
     isEdit?: boolean
     handoverId?: string
     onSuccess?: () => void
+    onCancel?: () => void
 }
 
-export default function HandoverForm({ initialData, isEdit = false, handoverId, onSuccess }: HandoverFormProps) {
+export default function HandoverForm({ initialData, isEdit = false, handoverId, onSuccess, onCancel }: HandoverFormProps) {
     const router = useRouter()
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isDrawing, setIsDrawing] = useState(false)
@@ -164,7 +165,8 @@ export default function HandoverForm({ initialData, isEdit = false, handoverId, 
     }
 
     const handleCancel = () => {
-        router.back()
+        if (onCancel) onCancel()
+        else router.back()
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

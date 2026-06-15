@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { handleDbError } from '@/lib/security'
+import { prisma } from '@/lib/db/prisma'
+import { handleDbError } from '@/lib/security/security'
 
 // GET /api/stock-move/nama-suggestions?q=baterai&typeBarang=UPS
 // Returns distinct namaBarang values matching the query (optionally filtered by typeBarang)

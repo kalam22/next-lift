@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
-import { deleteImageFile } from '@/lib/fileUtils'
+import { deleteImageFile } from '@/lib/utils/file'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
-import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/utils/diff-fields'
 import type { Ups } from '@/types/entities'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function GET(
   request: NextRequest,

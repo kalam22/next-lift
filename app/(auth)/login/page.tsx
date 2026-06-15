@@ -84,8 +84,8 @@ function LoginForm() {
 
                         {/* Error message */}
                         {error && (
-                            <div className="flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl">
-                                <svg className="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div role="alert" className="flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl">
+                                <svg className="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                                 <p className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>
@@ -94,10 +94,11 @@ function LoginForm() {
 
                         {/* Username */}
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                            <label htmlFor="login-username" className="text-[11px] font-bold text-gray-500 uppercase tracking-widest pl-1">
                                 Username
                             </label>
                             <input
+                                id="login-username"
                                 type="text"
                                 required
                                 autoComplete="username"
@@ -110,11 +111,12 @@ function LoginForm() {
 
                         {/* Password */}
                         <div className="space-y-2">
-                            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                            <label htmlFor="login-password" className="text-[11px] font-bold text-gray-500 uppercase tracking-widest pl-1">
                                 Password
                             </label>
                             <div className="relative">
                                 <input
+                                    id="login-password"
                                     type={showPassword ? 'text' : 'password'}
                                     required
                                     autoComplete="current-password"
@@ -126,9 +128,10 @@ function LoginForm() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                                 >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                                 </button>
                             </div>
                         </div>

@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import axios from 'axios'
-import { exportToExcel, ExcelExportConfig, ExcelColumn } from '@/lib/excel-utils'
+import { exportToExcel, ExcelExportConfig, ExcelColumn } from '@/lib/excel/utils'
 import { logger } from '@/lib/logger'
 
 export interface UseExcelExportConfig<T> {

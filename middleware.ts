@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { PATH_TO_MENU } from '@/lib/permissions'
+import { PATH_TO_MENU } from '@/lib/security/permissions'
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
-import { handleDbError } from '@/lib/security'
+import { handleDbError } from '@/lib/security/security'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
-import { buildDiffDescription, formatDateForDiff } from '@/lib/diff-fields'
+import { buildDiffDescription, formatDateForDiff } from '@/lib/utils/diff-fields'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function PUT(
   request: NextRequest,

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { validateRequest } from '@/lib/validation-helpers'
+import { validateRequest } from '@/lib/utils/helpers'
 import { liftSchema } from '@/lib/validations/lifts'
-import { handleDbError } from '@/lib/security'
+import { handleDbError } from '@/lib/security/security'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
 import type { Lift } from '@/types/lift'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function GET(
   request: NextRequest,

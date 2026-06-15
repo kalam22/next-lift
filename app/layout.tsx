@@ -1,12 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
 import React from 'react'
-import { ThemeProvider } from "@/components/theme-provider"
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { WebVitals } from '@/components/WebVitals'
-import AuthProvider from '@/components/AuthProvider'
-import ConditionalLayout from '@/components/ConditionalLayout'
+import { ProvidersLayout } from '@/components/ProvidersLayout'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -16,9 +12,25 @@ const poppins = Poppins({
   fallback: ['system-ui', 'arial'],
 })
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FDFDFC' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata: Metadata = {
   title: 'GPE - Management IT',
-  description: 'Aplikasi manajemen & inventory IT',
+  description: 'Aplikasi manajemen & inventory IT — tracking aset, monitoring stok, dan serah terima perangkat.',
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: 'GPE - Management IT',
+    description: 'Aplikasi manajemen & inventory IT',
+    type: 'website',
+    locale: 'id_ID',
+  },
 }
 
 export default function RootLayout({
@@ -26,27 +38,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const jsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'GPE Management IT',
+    description: 'Aplikasi manajemen & inventory IT — tracking aset, monitoring stok, dan serah terima perangkat.',
+    url: process.env.NEXT_PUBLIC_APP_URL || '',
+  })
+
   return (
     <html lang="id" suppressHydrationWarning>
       <body className={`${poppins.className} bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] min-h-screen`}>
         <a href="#main-content" className="skip-link">Skip to main content</a>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <ErrorBoundary>
-              <WebVitals />
-              <ConditionalLayout>
-                <main id="main-content">
-                  {children}
-                </main>
-              </ConditionalLayout>
-            </ErrorBoundary>
-          </AuthProvider>
-        </ThemeProvider>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+        <ProvidersLayout>
+          {children}
+        </ProvidersLayout>
       </body>
     </html>
   )

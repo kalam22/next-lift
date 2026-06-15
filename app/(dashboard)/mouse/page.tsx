@@ -7,11 +7,15 @@ import { useDataTable } from '@/hooks/useDataTable'
 import { useExcelImport } from '@/hooks/useExcelImport'
 import { useExcelExport } from '@/hooks/useExcelExport'
 import { usePermissions } from '@/hooks/usePermissions'
+import { STANDARD_ENTITY_CONFIGS } from '@/lib/forms/standard-entity-config'
+import StandardEntityForm from '@/components/StandardEntityForm'
+import CreateModal from '@/components/CreateModal'
 import type { Mouse } from '@/types/entities'
 
 export default function MousePage() {
   const { canCreate, canEdit, canDelete, canExport, canImport } = usePermissions('mouse')
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const {
     data: mice,
     loading,
@@ -145,13 +149,13 @@ export default function MousePage() {
           </button>
           )}
           {canCreate && (
-          <Link
-            href="/mouse/create"
+          <button
+            onClick={() => setIsCreateOpen(true)}
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-primary hover:bg-primary/90 shadow-primary/25 text-[10px] sm:text-[11px]"
           >
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Register Mouse</span>
-          </Link>
+          </button>
           )}
         </div>
       </div>
@@ -471,6 +475,19 @@ export default function MousePage() {
           </div>
         </div>
       </div>
+
+      <CreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Register Mouse"
+        subtitle="Tambah data Mouse baru"
+      >
+        <StandardEntityForm
+          config={STANDARD_ENTITY_CONFIGS.mouse}
+          onSuccess={() => { setIsCreateOpen(false); fetchData() }}
+          onCancel={() => setIsCreateOpen(false)}
+        />
+      </CreateModal>
     </div>
   )
 }

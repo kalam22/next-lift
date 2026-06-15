@@ -32,7 +32,7 @@ function SummaryCard({ title, value, subtitle, trend, gradientColor }: SummaryCa
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradientClass} rounded-full blur-3xl opacity-30`}></div>
       
       <div className="relative z-10">
-        <div className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-2">
+        <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-2">
           {title}
         </div>
         <div className={`text-2xl sm:text-3xl md:text-4xl font-black ${textColor} mb-2`}>
@@ -40,12 +40,12 @@ function SummaryCard({ title, value, subtitle, trend, gradientColor }: SummaryCa
         </div>
         <div className="flex items-center gap-2">
           {trend === 'up' && (
-            <span className="text-green-500 dark:text-green-400 text-xs font-bold">↑</span>
+            <span aria-hidden="true" className="text-green-500 dark:text-green-400 text-xs font-bold">↑</span>
           )}
           {trend === 'down' && (
-            <span className="text-red-500 dark:text-red-400 text-xs font-bold">↓</span>
+            <span aria-hidden="true" className="text-red-500 dark:text-red-400 text-xs font-bold">↓</span>
           )}
-          <span className="text-gray-600 dark:text-gray-400 text-xs font-bold">
+          <span className="text-gray-500 dark:text-gray-400 text-xs font-bold">
             {subtitle}
           </span>
         </div>

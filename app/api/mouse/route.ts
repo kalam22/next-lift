@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
-import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security'
+import { handleDbError, safeSortOrder, safeInt, safeLimit, safeSearch } from '@/lib/security/security'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
 import type { Mouse, ApiResponse } from '@/types/entities'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {

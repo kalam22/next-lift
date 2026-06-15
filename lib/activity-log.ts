@@ -6,7 +6,7 @@
  * Fire-and-forget: error tidak akan menggagalkan request utama.
  */
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 
 export type ActivityAction = 'CREATE' | 'UPDATE' | 'DELETE'
 

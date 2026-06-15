@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import ExcelJS from 'exceljs'
+import { cache } from '@/lib/cache'
 import { logger } from '@/lib/logger'
 import ActivityLogPanel from '@/components/ActivityLogPanel'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -564,7 +564,8 @@ function ExportModal({ onClose, search, typeFilter }: { onClose: () => void; sea
         return true
       })
 
-      // Build Excel
+      // Build Excel — dynamic import for bundle efficiency
+      const ExcelJS = await import('exceljs')
       const wb = new ExcelJS.Workbook()
       const ws = wb.addWorksheet('Stock Move')
 

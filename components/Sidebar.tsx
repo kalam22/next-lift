@@ -39,7 +39,7 @@ import {
     SidebarGroupContent,
     SidebarGroupLabel,
 } from "@/components/ui/sidebar"
-import { getVisibleMenus, isSuperAdminRole } from '@/lib/permissions'
+import { getVisibleMenus, isSuperAdminRole } from '@/lib/security/permissions'
 
 /** Derives display initials from a name string.
  *  - If the name has multiple words, takes the first letter of each word (up to 2).
@@ -317,6 +317,8 @@ export default function AppSidebar() {
                             {/* Footer button */}
                             <button
                                 onClick={() => setDropdownOpen((prev) => !prev)}
+                                aria-expanded={dropdownOpen}
+                                aria-haspopup="menu"
                                 className={`premium-card p-3 flex items-center gap-3 rounded-[2rem] transition-all duration-300 w-full text-left group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:border-none hover:opacity-80 active:scale-[0.98] cursor-pointer`}
                             >
                                 <div className="size-10 rounded-2xl bg-gradient-to-tr from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border border-white/50 dark:border-white/5 flex-shrink-0 flex items-center justify-center text-gray-400 font-black text-xs">

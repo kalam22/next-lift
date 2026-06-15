@@ -1,4 +1,4 @@
-import { formatWITA } from '@/lib/date-utils'
+import { formatWITA } from '@/lib/utils/date'
 
 interface MetadataCardProps {
   createdAt?: string | Date | null

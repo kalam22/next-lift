@@ -1,5 +1,5 @@
 import { useSession } from 'next-auth/react'
-import { hasPermission, isSuperAdminRole, type PermissionType } from '@/lib/permissions'
+import { hasPermission, isSuperAdminRole, type PermissionType } from '@/lib/security/permissions'
 
 /**
  * Hook untuk mengecek permission user dari session.

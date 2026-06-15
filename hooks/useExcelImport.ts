@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import { parseExcelFile, ExcelImportConfig } from '@/lib/excel-utils'
+import { parseExcelFile, ExcelImportConfig } from '@/lib/excel/utils'
 import { logger } from '@/lib/logger'
 
 export interface UseExcelImportConfig {

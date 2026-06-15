@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
-import { handleDbError } from '@/lib/security'
-import { validatePcHistoryInput, formatPcHistoryResponse } from '@/lib/pc-history'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
+import { handleDbError } from '@/lib/security/security'
+import { validatePcHistoryInput, formatPcHistoryResponse } from '@/lib/entities/pc-history'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 const convertToUTC8 = (dateString: string): Date => {
   const date = new Date(dateString)

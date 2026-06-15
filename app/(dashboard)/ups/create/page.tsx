@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import UPSForm from '@/components/UPSForm'
+import StandardEntityForm from '@/components/StandardEntityForm'
+import { STANDARD_ENTITY_CONFIGS } from '@/lib/forms/standard-entity-config'
 
 export default function CreateUPS() {
     return (
@@ -21,7 +22,7 @@ export default function CreateUPS() {
                 </div>
             </div>
 
-            <UPSForm isEdit={false} />
+            <StandardEntityForm config={STANDARD_ENTITY_CONFIGS.ups} isEdit={false} />
         </div>
     )
 }

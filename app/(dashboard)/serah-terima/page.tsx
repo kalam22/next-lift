@@ -1,15 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useDataTable } from '@/hooks/useDataTable'
 import { useExcelExport } from '@/hooks/useExcelExport'
 import { usePermissions } from '@/hooks/usePermissions'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import HandoverForm from '@/components/HandoverForm'
+import CreateModal from '@/components/CreateModal'
 import type { Handover } from '@/types/entities'
 
 export default function HandoverPage() {
   const { canCreate, canEdit, canDelete, canExport } = usePermissions('handover')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const {
     data: handovers,
     loading,
@@ -28,6 +32,7 @@ export default function HandoverPage() {
     handleSelectItem,
     handleClearSelection,
     handleBulkDelete,
+    fetchData,
     isAllSelected,
     isIndeterminate,
     colorTheme,
@@ -77,13 +82,13 @@ export default function HandoverPage() {
           </button>
           )}
           {canCreate && (
-          <Link
-            href="/serah-terima/create"
+          <button
+            onClick={() => setIsCreateOpen(true)}
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-primary hover:bg-primary/90 shadow-primary/25 text-[10px] sm:text-[11px]"
           >
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Catat Serah Terima</span>
-          </Link>
+          </button>
           )}
         </div>
       </div>
@@ -357,6 +362,17 @@ export default function HandoverPage() {
           </div>
         </div>
       </div>
+      <CreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Catat Serah Terima"
+        subtitle="Buat catatan serah terima barang baru"
+      >
+        <HandoverForm
+          onSuccess={() => { setIsCreateOpen(false); fetchData() }}
+          onCancel={() => setIsCreateOpen(false)}
+        />
+      </CreateModal>
     </div>
   )
 }

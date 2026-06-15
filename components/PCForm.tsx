@@ -37,9 +37,10 @@ interface PCFormProps {
     isEdit?: boolean
     pcId?: string
     onSuccess?: () => void
+    onCancel?: () => void
 }
 
-export default function PCForm({ initialData, isEdit = false, pcId, onSuccess }: PCFormProps) {
+export default function PCForm({ initialData, isEdit = false, pcId, onSuccess, onCancel }: PCFormProps) {
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const currentImageUrlRef = useRef<string>('')  // track current image URL to avoid stale closure
@@ -188,7 +189,8 @@ export default function PCForm({ initialData, isEdit = false, pcId, onSuccess }:
                 logger.error('Error deleting image on cancel:', error)
             }
         }
-        router.back()
+        if (onCancel) onCancel()
+        else router.back()
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

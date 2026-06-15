@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import axios from 'axios'
 import Swal from 'sweetalert2'
-import { compressImage, formatFileSize } from '@/lib/imageCompression'
+import { compressImage, formatFileSize } from '@/lib/utils/image-compression'
 import { logger } from '@/lib/logger'
 
 interface UseImageUploadOptions {

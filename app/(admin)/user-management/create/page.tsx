@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
 import { ArrowLeft, UserPlus, Save } from 'lucide-react'
-import { MENU_PERMISSIONS } from '@/lib/permissions'
+import { MENU_PERMISSIONS } from '@/lib/security/permissions'
 
 const MENU_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',

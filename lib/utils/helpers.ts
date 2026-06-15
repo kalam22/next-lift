@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { validationErrorResponse } from './api-response'
+import { validationErrorResponse } from '../api-response'
 
 export function handleValidationError(error: z.ZodError) {
   const errors = error.issues.map((err) => ({

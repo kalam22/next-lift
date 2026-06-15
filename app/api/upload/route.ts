@@ -3,7 +3,7 @@ import { writeFile, mkdir, unlink } from 'fs/promises'
 import { join, basename } from 'path'
 import { existsSync } from 'fs'
 import { logger } from '@/lib/logger'
-import { isValidImageType, isValidFileSize, sanitizeFileName, validateFileContent } from '@/lib/sanitize'
+import { isValidImageType, isValidFileSize, sanitizeFileName, validateFileContent } from '@/lib/security/sanitize'
 
 export async function POST(request: NextRequest) {
   try {

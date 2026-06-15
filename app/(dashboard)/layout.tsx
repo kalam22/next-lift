@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { DashboardLayoutClient } from '@/components/DashboardLayoutClient'
 
 export const metadata: Metadata = {
   title: {
@@ -12,5 +13,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>
 }

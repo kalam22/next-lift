@@ -4,7 +4,7 @@ import {
   calculateStockSummary,
   validateStockTransactionInput,
   VALID_CATEGORIES,
-} from './stock-move'
+} from './entities/stock-move'
 
 // ─── Unit Tests: calculateStockSummary ───────────────────────────────────────
 

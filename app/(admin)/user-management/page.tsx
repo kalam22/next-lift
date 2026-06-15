@@ -7,7 +7,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { Users, Plus, Edit, Trash2, Wifi, WifiOff, Clock } from 'lucide-react'
-import { isSuperAdminRole } from '@/lib/permissions'
+import { isSuperAdminRole } from '@/lib/security/permissions'
 
 interface User {
   id: number

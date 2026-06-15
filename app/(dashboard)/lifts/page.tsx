@@ -10,6 +10,8 @@ import { logger } from '@/lib/logger'
 import type { Lift, LiftsApiResponse } from '@/types/lift'
 import LiftTableRow from '@/components/LiftTableRow'
 import { usePermissions } from '@/hooks/usePermissions'
+import LiftForm from '@/components/LiftForm'
+import CreateModal from '@/components/CreateModal'
 // ExcelJS akan di-import secara dynamic untuk mengurangi bundle size
 
 /**
@@ -25,6 +27,7 @@ import { usePermissions } from '@/hooks/usePermissions'
  */
 export default function LiftsPage() {
   const { canCreate, canEdit, canDelete, canExport } = usePermissions('lifts')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [lifts, setLifts] = useState<Lift[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -381,13 +384,13 @@ export default function LiftsPage() {
           </button>
           )}
           {canCreate && (
-          <Link
-            href="/lifts/create"
+          <button
+            onClick={() => setIsCreateOpen(true)}
             className="btn-premium flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 text-[10px] sm:text-[11px]"
           >
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             <span className="uppercase tracking-widest">Tambah User</span>
-          </Link>
+          </button>
           )}
         </div>
       </div>
@@ -403,7 +406,9 @@ export default function LiftsPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               </div>
               <input
+                id="lifts-search"
                 type="text"
+                aria-label="Cari data lift berdasarkan nama, PT, atau departemen"
                 placeholder="Cari Nama, PT, atau Departemen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -446,8 +451,9 @@ export default function LiftsPage() {
             {/* Sort and Column Controls */}
             <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-50/50 dark:bg-[#020617]/50 border border-transparent rounded-xl hover:bg-white dark:hover:bg-[#0f172a] transition-all">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Sort:</span>
+                <label htmlFor="lifts-sort" className="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">Sort:</label>
                 <select
+                  id="lifts-sort"
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value as any)
@@ -464,6 +470,8 @@ export default function LiftsPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowColumnFilter(!showColumnFilter)}
+                  aria-label="Filter kolom tampilan"
+                  aria-expanded={showColumnFilter}
                   className="p-2.5 sm:p-3.5 bg-gray-50/50 dark:bg-[#020617]/50 hover:bg-white dark:hover:bg-[#0f172a] border border-transparent rounded-xl text-gray-500 hover:text-primary transition-all shadow-sm group"
                 >
                   <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
@@ -529,6 +537,7 @@ export default function LiftsPage() {
                   <div className="flex items-center">
                     <input
                       type="checkbox"
+                      aria-label="Pilih semua item"
                       checked={isAllSelected}
                       ref={(input) => {
                         if (input) input.indeterminate = isIndeterminate
@@ -538,40 +547,44 @@ export default function LiftsPage() {
                     />
                   </div>
                 </th>
-                {showColumns.no && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[60px]">NO</th>}
+                {showColumns.no && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[60px]" scope="col">NO</th>}
                 {showColumns.nama && (
                   <th
+                    scope="col"
+                    aria-sort={sortConfig.key === 'nama' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                     className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 cursor-pointer hover:text-primary transition-colors group/h min-w-[180px]"
                     onClick={() => handleSort('nama')}
                   >
                     <div className="flex items-center gap-2">
                       NAMA
-                      <div className="flex flex-col opacity-20 group-hover/h:opacity-100 transition-opacity">
+                      <div className="flex flex-col opacity-20 group-hover/h:opacity-100 transition-opacity" aria-hidden="true">
                         <svg className={`w-2.5 h-2.5 ${sortConfig.key === 'nama' && sortConfig.direction === 'asc' ? 'text-primary' : ''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 10H19.5L12 2Z" /></svg>
                         <svg className={`w-2.5 h-2.5 ${sortConfig.key === 'nama' && sortConfig.direction === 'desc' ? 'text-primary' : ''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 22L19.5 14H4.5L12 22Z" /></svg>
                       </div>
                     </div>
                   </th>
                 )}
-                {showColumns.pt && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[80px]">PT</th>}
-                {showColumns.departemen && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]">DEPARTEMEN</th>}
+                {showColumns.pt && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[80px]" scope="col">PT</th>}
+                {showColumns.departemen && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[120px]" scope="col">DEPARTEMEN</th>}
                 {showColumns.berlaku && (
                   <th
+                    scope="col"
+                    aria-sort={sortConfig.key === 'berlaku' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                     className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 cursor-pointer hover:text-primary transition-colors group/h min-w-[140px]"
                     onClick={() => handleSort('berlaku')}
                   >
                     <div className="flex items-center gap-2">
                       VALIDITY
-                      <div className="flex flex-col opacity-20 group-hover/h:opacity-100 transition-opacity">
+                      <div className="flex flex-col opacity-20 group-hover/h:opacity-100 transition-opacity" aria-hidden="true">
                         <svg className={`w-2.5 h-2.5 ${sortConfig.key === 'berlaku' && sortConfig.direction === 'asc' ? 'text-primary' : ''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 10H19.5L12 2Z" /></svg>
                         <svg className={`w-2.5 h-2.5 ${sortConfig.key === 'berlaku' && sortConfig.direction === 'desc' ? 'text-primary' : ''}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 22L19.5 14H4.5L12 22Z" /></svg>
                       </div>
                     </div>
                   </th>
                 )}
-                {showColumns.akses && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[150px]">FLOORS</th>}
-                {showColumns.status && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[100px]">STATUS</th>}
-                {showColumns.aksi && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 text-right min-w-[120px]">ACTION</th>}
+                {showColumns.akses && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[150px]" scope="col">FLOORS</th>}
+                {showColumns.status && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 min-w-[100px]" scope="col">STATUS</th>}
+                {showColumns.aksi && <th className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 text-right min-w-[120px]" scope="col">ACTION</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100/50 dark:divide-white/[0.02]">
@@ -604,7 +617,7 @@ export default function LiftsPage() {
               ) : currentItems.length === 0 ? (
                 <tr>
                   <td colSpan={Object.values(showColumns).filter(v => v).length + 1} className="px-4 sm:px-8 py-24 sm:py-32 text-center">
-                    <div className="flex flex-col items-center gap-4 opacity-50">
+                    <div role="status" className="flex flex-col items-center gap-4 opacity-50">
                       <div className="w-16 h-16 rounded-3xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-300">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-1.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                       </div>
@@ -636,8 +649,9 @@ export default function LiftsPage() {
         {/* Improved Pagination */}
         <div className="p-4 sm:p-6 lg:p-8 bg-gray-50/50 dark:bg-black/20 border-t border-[#f1f5f9]/50 dark:border-[#1e293b]/50 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6">
           <div className="flex items-center gap-3 sm:gap-4">
-            <span className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] whitespace-nowrap">Rows per page:</span>
+            <label htmlFor="lifts-rows" className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">Rows per page:</label>
             <select
+              id="lifts-rows"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value))
@@ -695,6 +709,18 @@ export default function LiftsPage() {
           </div>
         </div>
       </div>
+
+      <CreateModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Tambah User Lift"
+        subtitle="Daftarkan akses lift untuk pengguna baru"
+      >
+        <LiftForm
+          onSuccess={() => { setIsCreateOpen(false); fetchLifts() }}
+          onCancel={() => setIsCreateOpen(false)}
+        />
+      </CreateModal>
     </div>
   )
 }

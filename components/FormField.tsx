@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 
 interface FormFieldProps {
   label: string
@@ -12,12 +12,15 @@ const inputClass =
 
 /** Wrapper untuk label + input dengan styling konsisten */
 export function FormField({ label, required, children, className }: FormFieldProps) {
+  const fieldId = useId()
   return (
     <div className={`space-y-3 ${className ?? ''}`}>
-      <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+      <label htmlFor={fieldId} className="text-[11px] font-bold text-gray-500 uppercase tracking-widest pl-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      {children}
+      {React.isValidElement(children)
+        ? React.cloneElement(children as React.ReactElement<{ id?: string }>, { id: fieldId })
+        : children}
     </div>
   )
 }
@@ -28,18 +31,18 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
-export function FormInput({ className, ...props }: InputProps) {
-  return <input className={`${inputClass} ${className ?? ''}`} {...props} />
+export function FormInput({ className, id, ...props }: InputProps) {
+  return <input id={id} className={`${inputClass} ${className ?? ''}`} {...props} />
 }
 
-export function FormSelect({ className, children, ...props }: SelectProps) {
+export function FormSelect({ className, id, children, ...props }: SelectProps) {
   return (
-    <select className={`${inputClass} ${className ?? ''}`} {...props}>
+    <select id={id} className={`${inputClass} ${className ?? ''}`} {...props}>
       {children}
     </select>
   )
 }
 
-export function FormTextarea({ className, ...props }: TextareaProps) {
-  return <textarea className={`${inputClass} resize-none ${className ?? ''}`} {...props} />
+export function FormTextarea({ className, id, ...props }: TextareaProps) {
+  return <textarea id={id} className={`${inputClass} resize-none ${className ?? ''}`} {...props} />
 }

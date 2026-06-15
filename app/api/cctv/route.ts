@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db/prisma'
 import { cctvSchema } from '@/lib/validations/cctv'
 import { successResponse, errorResponse } from '@/lib/api-response'
-import { validateRequest } from '@/lib/validation-helpers'
+import { validateRequest } from '@/lib/utils/helpers'
 import { logger } from '@/lib/logger'
-import { cache } from '@/lib/cache'
-import { invalidateDashboardCache } from '@/lib/cache-invalidation'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
 import type { Cctv, ApiResponse } from '@/types/entities'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {

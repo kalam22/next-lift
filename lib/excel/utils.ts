@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import Swal from 'sweetalert2'
-import { logger } from './logger'
+import { logger } from '@/lib/logger'
 
 // Dynamic import untuk ExcelJS - mengurangi bundle size
 let ExcelJS: typeof import('exceljs') | null = null
