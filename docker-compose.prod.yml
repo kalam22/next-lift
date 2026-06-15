@@ -19,6 +19,8 @@ services:
 
   # ===== Override app to use container DB instead of host.docker.internal =====
   app:
+    ports:
+      - "5001:3000"
     depends_on:
       db:
         condition: service_healthy
