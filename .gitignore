@@ -6,7 +6,10 @@
 .pnp.js
 .pnp.*
 
-# Static assets\npublic/uploads/ing
+# Static assets
+public/uploads/
+
+# testing
 /coverage
 *.lcov
 
