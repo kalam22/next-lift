@@ -22,10 +22,8 @@ if [ -f /app/init.sql ]; then
   COUNT=$(PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -t -A -c "SELECT count(*) FROM laptops;" 2>/dev/null || echo "0")
   if [ "$COUNT" = "0" ]; then
     echo "📥 Importing data from init.sql..."
-    # Convert CRLF → LF (fixes Windows line-ending issues in Linux psql)
-    sed -i 's/\r$//' /app/init.sql
-    # || true so harmless errors don't crash container (e.g. setval on non-existent seq)
-    PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -f /app/init.sql || true
+    # Strip CR (fixes Windows line endings) then import; || true for harmless errors
+    tr -d '\r' < /app/init.sql | PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -f - || true
     echo "✅ Import complete"
   else
     echo "⏭️ Data already exists, skipping import"
