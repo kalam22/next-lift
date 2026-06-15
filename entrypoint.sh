@@ -17,10 +17,7 @@ echo "📦 Syncing schema..."
 node node_modules/prisma/build/index.js db push --accept-data-loss --skip-generate
 echo "✅ Schema synced"
 
-echo "🌱 Seeding admin user..."
-node prisma/seed.js
-
-# Import data if init.sql exists and tables are empty
+# Import data if init.sql exists and laptops table is empty
 if [ -f /app/init.sql ]; then
   COUNT=$(PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -t -A -c "SELECT count(*) FROM laptops;" 2>/dev/null || echo "0")
   if [ "$COUNT" = "0" ]; then
@@ -31,6 +28,9 @@ if [ -f /app/init.sql ]; then
     echo "⏭️ Data already exists, skipping import"
   fi
 fi
+
+echo "🌱 Seeding admin user..."
+node prisma/seed.js
 
 echo "🚀 Starting Next.js..."
 exec node --max-old-space-size=4096 server.js
