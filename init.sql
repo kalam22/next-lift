@@ -16,6 +16,7 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+SET session_replication_role = replica;
 
 --
 -- Data for Name: activity_logs; Type: TABLE DATA; Schema: public; Owner: kalam
@@ -899,6 +900,8 @@ SELECT pg_catalog.setval('public.user_permissions_id_seq', 460, true);
 --
 
 SELECT pg_catalog.setval('public.users_id_seq', 5, true);
+
+SET session_replication_role = DEFAULT;
 
 
 --
