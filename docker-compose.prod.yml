@@ -27,9 +27,9 @@ services:
     extra_hosts: []
     environment:
       DATABASE_URL: "postgresql://kalam:kalam@db:5432/cursor?schema=public"
-      NEXTAUTH_URL: "http://localhost:5001"
+      NEXTAUTH_URL: "http://inventaris.kana.my.id"
       NEXTAUTH_SECRET: "gpe-management-it-secret-key-2026-change-in-production"
-      NEXT_PUBLIC_APP_URL: "http://localhost:5001"
+      NEXT_PUBLIC_APP_URL: "http://inventaris.kana.my.id"
     volumes:
       - ./init.sql:/app/init.sql:ro
       - ./public/uploads:/app/public/uploads
