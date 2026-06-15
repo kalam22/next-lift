@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       ? { entityType, entityId: parseInt(entityIdParam) }
       : { entityType }
 
-    const logs = await (prisma as any).activityLog.findMany({
+    const logs = await prisma.activityLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,

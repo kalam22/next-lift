@@ -25,7 +25,7 @@ export interface LogActivityParams {
  */
 export async function logActivity(params: LogActivityParams): Promise<void> {
   try {
-    await (prisma as any).activityLog.create({
+    await prisma.activityLog.create({
       data: {
         entityType: params.entityType,
         entityId: params.entityId,
@@ -35,8 +35,8 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         userName: params.userName ?? null,
       },
     })
-  } catch {
-    // Jangan sampai gagal log menggagalkan request utama
+  } catch (e) {
+    console.error('Activity log failed:', e)
   }
 }
 
@@ -44,7 +44,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
  * Ambil activity log untuk satu entitas, diurutkan terbaru dulu.
  */
 export async function getActivityLogs(entityType: string, entityId: number) {
-  return (prisma as any).activityLog.findMany({
+  return prisma.activityLog.findMany({
     where: { entityType, entityId },
     orderBy: { createdAt: 'desc' },
     take: 100,
