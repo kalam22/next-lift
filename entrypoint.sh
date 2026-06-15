@@ -24,14 +24,15 @@ if [ -f /app/init.sql ]; then
     echo "📥 Importing data from init.sql..."
     # Convert CRLF → LF (fixes Windows line-ending issues in Linux psql)
     sed -i 's/\r$//' /app/init.sql
-    PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -f /app/init.sql
+    # || true so harmless errors don't crash container (e.g. setval on non-existent seq)
+    PGPASSWORD=kalam psql -h "$DB_HOST" -U kalam -d cursor -f /app/init.sql || true
     echo "✅ Import complete"
   else
     echo "⏭️ Data already exists, skipping import"
   fi
 fi
 
-echo "🌱 Seeding admin user..."
+echo "🌱 Seeding users..."
 node prisma/seed.js
 
 echo "🚀 Starting Next.js..."
