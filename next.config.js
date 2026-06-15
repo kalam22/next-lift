@@ -12,6 +12,7 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   allowedDevOrigins: ['10.8.7.207'],
   swcMinify: true,

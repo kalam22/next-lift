@@ -1,0 +1,58 @@
+services:
+  # ===== Database (override for Ubuntu - localhost no longer has PostgreSQL) =====
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kalam
+      POSTGRES_PASSWORD: kalam
+      POSTGRES_DB: cursor
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kalam -d cursor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ===== Override app to use container DB instead of host.docker.internal =====
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts: []
+    environment:
+      DATABASE_URL: "postgresql://kalam:kalam@db:5432/cursor?schema=public"
+      NEXTAUTH_URL: "https://inventaris.kana.my.id"
+      NEXT_PUBLIC_APP_URL: "https://inventaris.kana.my.id"
+    volumes:
+      - ./init.sql:/app/init.sql:ro
+
+  # ===== Nginx reverse proxy for HTTPS + domain =====
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot-data:/var/www/certbot
+    depends_on:
+      - app
+
+  # ===== Certbot for SSL auto-renewal (optional) =====
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-data:/var/www/certbot
+      - ./ssl:/etc/letsencrypt
+    profiles:
+      - certbot
+
+volumes:
+  pgdata:
+  certbot-data:

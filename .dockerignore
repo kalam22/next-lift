@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+.vscode
+.vercel
+*.local
+bun.lock
+tsconfig.tsbuildinfo
+.env
+.env.*

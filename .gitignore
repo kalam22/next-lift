@@ -5,7 +5,6 @@
 /.pnp
 .pnp.js
 .pnp.*
-package-lock.json
 
 # testing
 /coverage
@@ -39,7 +38,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# local env files
+# local env files (commit .env.production for deployment)
 .env*.local
 .env
 .env.development.local
@@ -54,7 +53,6 @@ lerna-debug.log*
 next-env.d.ts
 
 # prisma
-# Uncomment if you want to ignore generated Prisma client
 # /node_modules/.prisma/
 
 # database
@@ -62,7 +60,7 @@ next-env.d.ts
 *.sqlite
 *.sqlite3
 
-# uploads / media files (uncomment jika tidak ingin commit file upload)
+# uploads / media files
 /public/uploads/*
 !/public/uploads/.gitkeep
 
@@ -83,6 +81,7 @@ Desktop.ini
 .eslintcache
 .stylelintcache
 node_modules/.cache
+.vite/
 
 # Temporary files
 *.tmp
@@ -101,4 +100,16 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+# ===== Docker / Production =====
+ssl/
+certbot-data/
+docker-entrypoint.sh
+
+# ===== DB dumps (local export) =====
+db_dump*.sql
+
+# ===== Bun (not used in production) =====
+bun.lock
+
 
