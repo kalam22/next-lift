@@ -1,10 +1,6 @@
-﻿-- Auto-imported from local DB dump
-\unrestrict
 --
 -- PostgreSQL database dump
 --
-
-\restrict BdZmtZ9oOfLMJyYYvgPbAoxX8fc8nDGh9Oee6LOO3eXbe3MNWZkKgjp3UjIsCkx
 
 -- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
