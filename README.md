@@ -14,11 +14,21 @@ Aplikasi manajemen inventaris IT: laptop, PC, lift, UPS, printer, monitor, mouse
 - Git
 - (Opsional) Domain + DNS mengarah ke server
 
-### Clone & Run (Produksi — Ubuntu Server)
+### Clone & Run
+
+Pilih sesuai environment:
+
+**Windows (Docker Desktop) — PostgreSQL di host:**
 ```bash
-git clone https://github.com/kalam22/next-lift.git
-cd next-lift
+docker compose up -d --build
+# Akses http://localhost:5001
+```
+> Base compose (`docker-compose.yml`) konek ke `host.docker.internal:5432` — pastikan PostgreSQL sudah running di Windows.
+
+**Ubuntu Server — PostgreSQL di container:**
+```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Akses http://inventaris.kana.my.id atau http://<server-ip>:5001
 ```
 
 ### Rebuild Tanpa Cache (setelah kode berubah)
