@@ -146,35 +146,35 @@ async function getRecentActivity() {
   const processStandard = async (model: any, menuName: string, quantityField: string) => {
     const [masukItems, keluarItems] = await Promise.all([
       model.findMany({
-        select: { id: true, brand: true, [quantityField]: true, tanggalMasuk: true, site: true, diperuntukan: true },
+        select: { id: true, brand: true, [quantityField]: true, tanggalMasuk: true, site: true, diperuntukan: true, updatedAt: true },
         orderBy: { tanggalMasuk: 'desc' },
         take: limit,
       }),
       model.findMany({
-        select: { id: true, brand: true, [quantityField]: true, tanggalKirim: true, site: true, diperuntukan: true },
+        select: { id: true, brand: true, [quantityField]: true, tanggalKirim: true, site: true, diperuntukan: true, updatedAt: true },
         where: { tanggalKirim: { not: null } },
         orderBy: { tanggalKirim: 'desc' },
         take: limit,
       }),
     ])
     masukItems.forEach((item: any) => {
-      if (item.tanggalMasuk) activities.push({ menu: menuName, item: item.brand, action: 'masuk', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.tanggalMasuk.toISOString(), updatedAt: item.tanggalMasuk.toISOString() })
+      if (item.tanggalMasuk) activities.push({ menu: menuName, item: item.brand, action: 'masuk', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
     })
     keluarItems.forEach((item: any) => {
-      if (item.tanggalKirim) activities.push({ menu: menuName, item: item.brand, action: 'keluar', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.tanggalKirim.toISOString(), updatedAt: item.tanggalKirim.toISOString() })
+      if (item.tanggalKirim) activities.push({ menu: menuName, item: item.brand, action: 'keluar', quantity: item[quantityField], site: item.site || '', pic: item.diperuntukan || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
     })
   }
 
   const processPC = async (model: any, menuName: string) => {
     const [masukItems, keluarItems] = await Promise.all([
-      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true, untuk: true }, orderBy: { masuk: 'desc' }, take: limit }),
-      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true, untuk: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true, untuk: true, updatedAt: true }, orderBy: { masuk: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true, untuk: true, updatedAt: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
     ])
     masukItems.forEach((item: any) => {
-      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.masuk.toISOString(), updatedAt: item.masuk.toISOString() })
+      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
     })
     keluarItems.forEach((item: any) => {
-      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.kirim.toISOString(), updatedAt: item.kirim.toISOString() })
+      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
     })
   }
 
