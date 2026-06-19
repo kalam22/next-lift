@@ -151,6 +151,7 @@ export async function PUT(
 
     // Build update data object conditionally
     const updateData: any = {
+      merk,
       prosesor,
       ssd_hdd: ssdHdd ?? '',
       ram: ram ?? '',
