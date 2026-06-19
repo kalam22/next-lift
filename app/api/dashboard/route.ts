@@ -167,14 +167,14 @@ async function getRecentActivity() {
 
   const processPC = async (model: any, menuName: string) => {
     const [masukItems, keluarItems] = await Promise.all([
-      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true, untuk: true, updatedAt: true }, orderBy: { masuk: 'desc' }, take: limit }),
-      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true, untuk: true, updatedAt: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, masuk: true, site: true, untuk: true, updated_at: true }, orderBy: { masuk: 'desc' }, take: limit }),
+      model.findMany({ select: { id: true, merk: true, unit: true, kirim: true, site: true, untuk: true, updated_at: true }, where: { kirim: { not: null } }, orderBy: { kirim: 'desc' }, take: limit }),
     ])
     masukItems.forEach((item: any) => {
-      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
+      if (item.masuk) activities.push({ menu: menuName, item: item.merk, action: 'masuk', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updated_at.toISOString(), updatedAt: item.updated_at.toISOString() })
     })
     keluarItems.forEach((item: any) => {
-      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updatedAt.toISOString(), updatedAt: item.updatedAt.toISOString() })
+      if (item.kirim) activities.push({ menu: menuName, item: item.merk, action: 'keluar', quantity: parseInt(item.unit) || 1, site: item.site || '', pic: item.untuk || '', timestamp: item.updated_at.toISOString(), updatedAt: item.updated_at.toISOString() })
     })
   }
 
