@@ -271,8 +271,9 @@ docker compose up -d --build
 ## 📦 Fitur
 
 ### Manajemen Inventaris
-- 💻 **Laptops** — merk, tipe, user, OS, processor, RAM, storage, SN, divisi, status
-- 🖥️ **PCs** — motherboard, processor, RAM, HDD/SSD, GPU, divisi, status
+- 💻 **Laptops** — merk, prosesor, SN, SSD/HDD, RAM, untuk, site, departemen, PO, status
+- 🖥️ **PCs** — merk, prosesor, SSD/HDD, RAM, monitor, printer, keyboard, UPS, untuk, site, departemen, PO, status
+- 🔄 **History PC & Laptop** — riwayat perpindahan perangkat (PIC, site, departemen, tanggal) dengan edit & delete
 - 🛗 **Lifts** — tipe, kapasitas, lantai, area, status
 - 🔌 **UPS** — tipe, kapasitas, lokasi, status
 - 🖨️ **Printer** — tipe, lokasi, divisi, status
@@ -285,7 +286,7 @@ docker compose up -d --build
 ### Fitur Lain
 - 📦 **Stock Move** — pencatatan barang MASUK/KELUAR dengan vendor & tipe barang
 - 📝 **Serah Terima** — handover barang dengan PDF tanda tangan
-- 📊 **Activity Log** — semua CREATE/UPDATE/DELETE tercatat (79+ log)
+- 📊 **Activity Log** — semua CREATE/UPDATE/DELETE tercatat termasuk history edit/delete
 - 📥 **Export/Import Excel** — backup & restore data via Excel
 - 🖼️ **Upload** — gambar & PDF untuk setiap barang
 - 🌙 **Dark Mode** — toggle dark/light
