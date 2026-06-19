@@ -29,6 +29,18 @@ export default function PcHistoryPage() {
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
 
+    // Edit modal state
+    const [editingId, setEditingId] = useState<number | null>(null)
+    const [editData, setEditData] = useState({
+        pic: '',
+        tanggalTerima: '',
+        site: '',
+        departemen: '',
+        keterangan: '',
+    })
+    const [editErrors, setEditErrors] = useState<Record<string, string>>({})
+    const [editSubmitting, setEditSubmitting] = useState(false)
+
     const fetchData = useCallback(async () => {
         try {
             const [pcRes, historiesRes] = await Promise.all([
@@ -64,6 +76,14 @@ export default function PcHistoryPage() {
         return format(witaDate, 'dd MMM yyyy', { locale: id })
     }
 
+    const toDateInput = (dateInput: string | Date): string => {
+        if (!dateInput) return ''
+        const date = dateInput instanceof Date ? dateInput : new Date(dateInput)
+        if (isNaN(date.getTime())) return ''
+        const witaDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
+        return format(witaDate, 'yyyy-MM-dd')
+    }
+
     const toOrdinal = (n: number): string => {
         const ordinals = [
             'Pertama', 'Kedua', 'Ketiga', 'Keempat', 'Kelima',
@@ -77,6 +97,14 @@ export default function PcHistoryPage() {
         if (!formData.pic.trim()) newErrors.pic = 'PIC wajib diisi'
         if (!formData.tanggalTerima) newErrors.tanggalTerima = 'Tanggal terima wajib diisi'
         if (!formData.site) newErrors.site = 'Site wajib diisi'
+        return newErrors
+    }
+
+    const validateEdit = () => {
+        const newErrors: Record<string, string> = {}
+        if (!editData.pic.trim()) newErrors.pic = 'PIC wajib diisi'
+        if (!editData.tanggalTerima) newErrors.tanggalTerima = 'Tanggal terima wajib diisi'
+        if (!editData.site) newErrors.site = 'Site wajib diisi'
         return newErrors
     }
 
@@ -123,6 +151,104 @@ export default function PcHistoryPage() {
             })
         } finally {
             setSubmitting(false)
+        }
+    }
+
+    const openEdit = (history: PcHistory) => {
+        setEditingId(history.id)
+        setEditData({
+            pic: history.pic,
+            tanggalTerima: toDateInput(history.tanggalTerima),
+            site: history.site,
+            departemen: history.departemen || '',
+            keterangan: history.keterangan || '',
+        })
+        setEditErrors({})
+    }
+
+    const closeEdit = () => {
+        setEditingId(null)
+    }
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const validationErrors = validateEdit()
+        if (Object.keys(validationErrors).length > 0) {
+            setEditErrors(validationErrors)
+            return
+        }
+        setEditErrors({})
+        setEditSubmitting(true)
+        try {
+            await axios.put(`/api/pcs/${pcId}/history/${editingId}`, editData)
+            await Swal.fire({
+                title: 'Berhasil!',
+                text: 'Histori berhasil diperbarui.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                buttonsStyling: false,
+                customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' },
+            })
+            closeEdit()
+            await fetchData()
+        } catch (error: unknown) {
+            logger.error('Error updating pc history:', error)
+            let message = 'Gagal memperbarui histori. Silakan coba lagi.'
+            if (axios.isAxiosError(error) && error.response?.data?.error) {
+                message = error.response.data.error
+            }
+            Swal.fire({
+                title: 'Gagal!',
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'OK',
+                buttonsStyling: false,
+                customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' },
+            })
+        } finally {
+            setEditSubmitting(false)
+        }
+    }
+
+    const handleDelete = async (history: PcHistory) => {
+        const result = await Swal.fire({
+            title: 'Hapus Histori?',
+            html: `PIC <strong>${history.pic}</strong> (${formatDateWITA(history.tanggalTerima)}) akan dihapus permanen.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            buttonsStyling: false,
+            customClass: {
+                popup: '!rounded-2xl',
+                title: '!font-bold',
+                confirmButton: 'swal2-confirm !bg-red-600 hover:!bg-red-700',
+                cancelButton: 'swal2-cancel',
+            },
+        })
+        if (!result.isConfirmed) return
+
+        try {
+            await axios.delete(`/api/pcs/${pcId}/history/${history.id}`)
+            await Swal.fire({
+                title: 'Terhapus!',
+                text: 'Histori berhasil dihapus.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                buttonsStyling: false,
+                customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' },
+            })
+            await fetchData()
+        } catch (error: unknown) {
+            logger.error('Error deleting pc history:', error)
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Gagal menghapus histori. Silakan coba lagi.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                buttonsStyling: false,
+                customClass: { popup: '!rounded-2xl', title: '!font-bold', confirmButton: 'swal2-confirm' },
+            })
         }
     }
 
@@ -261,6 +387,7 @@ export default function PcHistoryPage() {
                                     <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Site</th>
                                     <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Departemen</th>
                                     <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Keterangan</th>
+                                    <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest w-24">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#f1f5f9] dark:divide-[#334155]">
@@ -294,6 +421,28 @@ export default function PcHistoryPage() {
                                             <td className="px-6 py-4 text-sm font-medium text-gray-500 dark:text-gray-400 max-w-xs truncate">
                                                 {history.keterangan || '-'}
                                             </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => openEdit(history)}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"
+                                                        title="Edit histori"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(history)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                                                        title="Hapus histori"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     )
                                 })}
@@ -302,6 +451,100 @@ export default function PcHistoryPage() {
                     </div>
                 )}
             </div>
+
+            {/* Edit Modal */}
+            {editingId !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#1e293b] rounded-3xl border border-[#f1f5f9] dark:border-[#334155] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-[#f1f5f9] dark:border-[#334155] bg-gray-50/50 dark:bg-[#0f172a]/20 flex items-center justify-between">
+                            <h2 className="text-[10px] font-black text-[#0f172a] dark:text-white uppercase tracking-[0.2em]">
+                                Edit Histori
+                            </h2>
+                            <button
+                                onClick={closeEdit}
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-[#334155] transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <form onSubmit={handleEditSubmit} className="p-8 space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <FormField label="PIC" required>
+                                    <FormInput
+                                        type="text"
+                                        placeholder="Nama PIC..."
+                                        value={editData.pic}
+                                        onChange={(e) => setEditData({ ...editData, pic: e.target.value })}
+                                    />
+                                    {editErrors.pic && <p className="text-xs text-red-500 font-medium mt-1">{editErrors.pic}</p>}
+                                </FormField>
+
+                                <FormField label="Tanggal Terima" required>
+                                    <FormInput
+                                        type="date"
+                                        value={editData.tanggalTerima}
+                                        onChange={(e) => setEditData({ ...editData, tanggalTerima: e.target.value })}
+                                    />
+                                    {editErrors.tanggalTerima && <p className="text-xs text-red-500 font-medium mt-1">{editErrors.tanggalTerima}</p>}
+                                </FormField>
+
+                                <FormField label="Site" required>
+                                    <FormSelect
+                                        value={editData.site}
+                                        onChange={(e) => setEditData({ ...editData, site: e.target.value })}
+                                    >
+                                        <option value="">Pilih site...</option>
+                                        {SITE_OPTIONS.map((site) => (
+                                            <option key={site} value={site}>{site}</option>
+                                        ))}
+                                    </FormSelect>
+                                    {editErrors.site && <p className="text-xs text-red-500 font-medium mt-1">{editErrors.site}</p>}
+                                </FormField>
+
+                                <FormField label="Departemen">
+                                    <FormSelect
+                                        value={editData.departemen}
+                                        onChange={(e) => setEditData({ ...editData, departemen: e.target.value })}
+                                    >
+                                        <option value="">Pilih departemen...</option>
+                                        {DEPARTEMEN_OPTIONS.map((dep) => (
+                                            <option key={dep} value={dep}>{dep}</option>
+                                        ))}
+                                    </FormSelect>
+                                </FormField>
+                            </div>
+
+                            <FormField label="Keterangan">
+                                <FormTextarea
+                                    rows={3}
+                                    placeholder="Keterangan tambahan (opsional)..."
+                                    value={editData.keterangan}
+                                    onChange={(e) => setEditData({ ...editData, keterangan: e.target.value })}
+                                />
+                            </FormField>
+
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={closeEdit}
+                                    className="px-6 py-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border border-[#f1f5f9] dark:border-[#334155] hover:bg-gray-50 dark:hover:bg-[#0f172a]/20"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editSubmitting}
+                                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm disabled:cursor-not-allowed"
+                                >
+                                    {editSubmitting ? 'Menyimpan...' : 'Simpan'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
