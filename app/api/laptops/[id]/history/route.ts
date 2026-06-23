@@ -4,6 +4,8 @@ import { logger } from '@/lib/logger'
 import { handleDbError } from '@/lib/security/security'
 import { validateHistoryInput, formatHistoryResponse } from '@/lib/entities/laptop-history'
 import { cache, invalidateDashboardCache } from '@/lib/cache'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 
 const convertToUTC8 = (dateString: string): Date => {
   const date = new Date(dateString)
@@ -117,6 +119,16 @@ export async function POST(
     await cache.delete(`/api/laptops/${id}`)
     await cache.delete('/api/laptops')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({
+      entityType: 'laptop_history',
+      entityId: history.id,
+      action: 'CREATE',
+      description: `Histori Laptop #${laptopId} ditambahkan (PIC: ${pic}, Site: ${site})`,
+      userId: user?.id,
+      userName: user?.name,
+    })
 
     return NextResponse.json(formatHistoryResponse(history), { status: 201 })
   } catch (error: unknown) {

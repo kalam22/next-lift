@@ -3,7 +3,8 @@ import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
 import { handleDbError } from '@/lib/security/security'
 import { validatePcHistoryInput, formatPcHistoryResponse } from '@/lib/entities/pc-history'
-import { cache, invalidateDashboardCache } from '@/lib/cache'
+import { logActivity } from '@/lib/activity-log'
+import { getSessionUser } from '@/lib/get-session-user'
 
 const convertToUTC8 = (dateString: string): Date => {
   const date = new Date(dateString)
@@ -106,6 +107,16 @@ export async function POST(
     await cache.delete(`/api/pcs/${id}`)
     await cache.delete('/api/pcs')
     await invalidateDashboardCache()
+
+    const user = await getSessionUser(request)
+    logActivity({
+      entityType: 'pc_history',
+      entityId: history.id,
+      action: 'CREATE',
+      description: `Histori PC #${pcId} ditambahkan (PIC: ${pic}, Site: ${site})`,
+      userId: user?.id,
+      userName: user?.name,
+    })
 
     return NextResponse.json(formatPcHistoryResponse(history), { status: 201 })
   } catch (error: unknown) {
