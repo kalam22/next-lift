@@ -122,10 +122,10 @@ export async function POST(
 
     const user = await getSessionUser(request)
     logActivity({
-      entityType: 'laptop_history',
-      entityId: history.id,
+      entityType: 'laptop',
+      entityId: laptopId,
       action: 'CREATE',
-      description: `Histori Laptop #${laptopId} ditambahkan (PIC: ${pic}, Site: ${site})`,
+      description: `Histori ditambahkan (PIC: ${pic}, Site: ${site})`,
       userId: user?.id,
       userName: user?.name,
     })

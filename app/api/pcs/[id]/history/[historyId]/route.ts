@@ -65,8 +65,8 @@ export async function PUT(
 
     const user = await getSessionUser(request)
     logActivity({
-      entityType: 'pc_history',
-      entityId: hId,
+      entityType: 'pc',
+      entityId: pcId,
       action: 'UPDATE',
       description: `Histori PC #${pcId} diperbarui (PIC: ${pic})`,
       userId: user?.id,
@@ -126,10 +126,10 @@ export async function DELETE(
 
     const user = await getSessionUser(request)
     logActivity({
-      entityType: 'pc_history',
-      entityId: hId,
+      entityType: 'pc',
+      entityId: pcId,
       action: 'DELETE',
-      description: `Histori PC #${pcId} dihapus (PIC: ${existing.pic})`,
+      description: `Histori dihapus (PIC: ${existing.pic})`,
       userId: user?.id,
       userName: user?.name,
     })
