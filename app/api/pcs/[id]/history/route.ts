@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma'
 import { logger } from '@/lib/logger'
 import { handleDbError } from '@/lib/security/security'
 import { validatePcHistoryInput, formatPcHistoryResponse } from '@/lib/entities/pc-history'
+import { cache, invalidateDashboardCache } from '@/lib/cache'
 import { logActivity } from '@/lib/activity-log'
 import { getSessionUser } from '@/lib/get-session-user'
 
